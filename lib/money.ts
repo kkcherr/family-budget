@@ -92,3 +92,24 @@ export function monthProgress(date = new Date()): number {
 export function shortDate(date: Date): string {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
+
+/** Format a 'YYYY-MM-DD' string as "1 Jul 2026" (timezone-safe). */
+export function formatDateStr(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/** A human "in N days" / "today" / "N days ago" relative phrase. */
+export function relativeDays(days: number | null): string {
+  if (days === null) return "";
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  if (days === -1) return "yesterday";
+  if (days > 1) return `in ${days} days`;
+  return `${Math.abs(days)} days ago`;
+}
