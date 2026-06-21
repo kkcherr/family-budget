@@ -1,0 +1,11 @@
+# Caddy reverse proxy with automatic HTTPS.
+# DOMAIN and TLS_EMAIL come from the environment (see docker-compose.yml).
+{
+	# Use the ACME account email if provided (recommended for renewal notices).
+	email {$TLS_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}

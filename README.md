@@ -75,6 +75,24 @@ Then, in three short steps:
 
 ---
 
+## 🖥️ Self-host on your own VPS (Docker)
+
+Prefer to run it on your own server with your own domain? One command brings up
+the **app + Postgres + Caddy** (automatic HTTPS), with the database living on
+your VPS:
+
+```bash
+git clone https://github.com/kkcherr/family-budget.git
+cd family-budget
+cp .env.docker.example .env     # set DOMAIN, APP_PASSWORD, SESSION_SECRET, POSTGRES_PASSWORD
+docker compose up -d --build
+```
+
+Migrations and seeding run automatically on first start. Full walkthrough,
+updates, and backups are in **[DEPLOY.md](./DEPLOY.md)**.
+
+---
+
 ## 🛠️ Local development
 
 **Prerequisites:** Node 18+ and a Postgres database (local or a Neon dev branch).
