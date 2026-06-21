@@ -226,6 +226,79 @@ export async function getMonthSummary(month: string): Promise<MonthSummary> {
   };
 }
 
+export interface YearMonthPoint {
+  month: string; // 'YYYY-MM'
+  monthIndex: number; // 0..11
+  spent: number;
+  saved: number;
+}
+
+export interface YearSummary {
+  year: number;
+  income: number; // monthly income from the plan
+  currency: string;
+  points: YearMonthPoint[]; // always 12 entries, Jan..Dec
+  totalSpent: number;
+  totalSaved: number;
+  monthsWithData: number;
+  avgMonthlySpend: number;
+}
+
+/** Per-month spent vs saved totals for a calendar year (for the YTD graph). */
+export async function getYearSummary(year: number): Promise<YearSummary> {
+  const plan = await getPlan();
+  const rows = await sql<{ month: string; spent: string; saved: string }[]>`
+    SELECT m.month,
+      SUM(CASE WHEN c.section <> 'savings' THEN a.amount ELSE 0 END) AS spent,
+      SUM(CASE WHEN c.section =  'savings' THEN a.amount ELSE 0 END) AS saved
+    FROM months m
+    JOIN actuals a ON a.month_id = m.id
+    JOIN categories c ON c.id = a.category_id
+    WHERE m.month LIKE ${year + "-%"}
+    GROUP BY m.month
+    ORDER BY m.month
+  `;
+
+  const byMonth = new Map<string, { spent: number; saved: number }>();
+  for (const r of rows) {
+    byMonth.set(r.month, { spent: num(r.spent), saved: num(r.saved) });
+  }
+
+  const points: YearMonthPoint[] = [];
+  for (let i = 0; i < 12; i++) {
+    const month = `${year}-${String(i + 1).padStart(2, "0")}`;
+    const v = byMonth.get(month) ?? { spent: 0, saved: 0 };
+    points.push({ month, monthIndex: i, spent: v.spent, saved: v.saved });
+  }
+
+  const totalSpent = points.reduce((s, p) => s + p.spent, 0);
+  const totalSaved = points.reduce((s, p) => s + p.saved, 0);
+  const monthsWithData = byMonth.size;
+
+  return {
+    year,
+    income: plan.monthly_income,
+    currency: plan.currency,
+    points,
+    totalSpent,
+    totalSaved,
+    monthsWithData,
+    avgMonthlySpend: monthsWithData > 0 ? totalSpent / monthsWithData : 0,
+  };
+}
+
+/** Years that have any tracked data (for the year switcher). */
+export async function getTrackedYears(includeYear: number): Promise<number[]> {
+  const rows = await sql<{ y: string }[]>`
+    SELECT DISTINCT LEFT(m.month, 4) AS y
+    FROM months m JOIN actuals a ON a.month_id = m.id
+    ORDER BY y DESC
+  `;
+  const set = new Set(rows.map((r) => Number(r.y)));
+  set.add(includeYear);
+  return Array.from(set).sort((a, b) => b - a);
+}
+
 /** Distinct months that have any actuals, newest first, plus the given month. */
 export async function getTrackedMonths(include: string): Promise<string[]> {
   const rows = await sql<{ month: string }[]>`
