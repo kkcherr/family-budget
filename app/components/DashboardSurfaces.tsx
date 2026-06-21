@@ -1,27 +1,104 @@
+import Link from "next/link";
+import { FinanceSummary, daysUntil } from "@/lib/finance-types";
+import {
+  formatCurrency,
+  formatDateStr,
+  relativeDays,
+} from "@/lib/money";
+
 /**
- * The dashboard "at a glance" reminders: credit card payments due, cash
- * position across accounts, and upcoming big payments. These are wired to real
- * data in a later phase — for now they show calm empty states so the layout
- * reflects where each piece will live.
+ * The dashboard "at a glance" reminders: the soonest credit card payment, your
+ * cash position, and the next big upcoming payment. Each links to the full
+ * Cards & cash screen.
  */
-export default function DashboardSurfaces() {
+export default function DashboardSurfaces({
+  finance,
+  currency,
+}: {
+  finance: FinanceSummary;
+  currency: string;
+}) {
+  const next = finance.nextCardPayment;
+  const nextDueDays = next ? daysUntil(next.due) : null;
+
+  // Soonest upcoming payment with a due date and money still to set aside.
+  const upcoming = finance.upcoming
+    .filter((u) => u.amount - u.saved_so_far > 0)
+    .sort((a, b) => {
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+      return a.due_date < b.due_date ? -1 : 1;
+    })[0];
+
   return (
     <section className="grid gap-3 sm:grid-cols-3">
-      <SurfaceCard
-        icon="💳"
-        title="Credit cards"
-        body="Track your Amex, Capital One and Tesco balances and see “pay £X by [date].”"
-      />
-      <SurfaceCard
-        icon="🏦"
-        title="Cash position"
-        body="What you hold across accounts vs. what you owe on cards — your genuinely free money."
-      />
-      <SurfaceCard
-        icon="📅"
-        title="Upcoming big payments"
-        body="Holidays, the dog’s op, college — each with how much you still need to set aside."
-      />
+      {/* Credit cards */}
+      <SurfaceCard icon="💳" title="Credit cards" href="/finances">
+        {next && next.due ? (
+          <>
+            <p className="text-lg font-semibold tabular-nums text-ink">
+              {formatCurrency(next.card.balance, currency)}
+            </p>
+            <p className="text-xs text-ink-soft">
+              {next.card.name} · by {formatDateStr(next.due)}
+            </p>
+            {nextDueDays !== null && (
+              <p className="text-[11px] text-ink-faint">
+                {relativeDays(nextDueDays)} ·{" "}
+                {formatCurrency(finance.totalCardDebt, currency)} owed total
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-xs text-ink-faint">
+            Add card balances to see payments due.
+          </p>
+        )}
+      </SurfaceCard>
+
+      {/* Cash position */}
+      <SurfaceCard icon="🏦" title="Cash position" href="/finances">
+        <p
+          className={`text-lg font-semibold tabular-nums ${
+            finance.freeMoney >= 0 ? "text-sage-600" : "text-blush-700"
+          }`}
+        >
+          {formatCurrency(finance.freeMoney, currency)}
+        </p>
+        <p className="text-xs text-ink-soft">free after card debt</p>
+        <p className="text-[11px] text-ink-faint">
+          {formatCurrency(finance.totalCash, currency)} cash ·{" "}
+          {formatCurrency(finance.totalCardDebt, currency)} owed
+        </p>
+      </SurfaceCard>
+
+      {/* Upcoming big payments */}
+      <SurfaceCard icon="📅" title="Upcoming" href="/finances">
+        {upcoming ? (
+          <>
+            <p className="text-lg font-semibold tabular-nums text-ink">
+              {formatCurrency(
+                upcoming.amount - upcoming.saved_so_far,
+                currency
+              )}
+            </p>
+            <p className="truncate text-xs text-ink-soft">
+              {upcoming.name} still to set aside
+            </p>
+            {upcoming.due_date && (
+              <p className="text-[11px] text-ink-faint">
+                due {formatDateStr(upcoming.due_date)}
+              </p>
+            )}
+          </>
+        ) : finance.totalStillToSetAside > 0 ? (
+          <p className="text-lg font-semibold tabular-nums text-ink">
+            {formatCurrency(finance.totalStillToSetAside, currency)}
+          </p>
+        ) : (
+          <p className="text-xs text-ink-faint">Nothing to set aside.</p>
+        )}
+      </SurfaceCard>
     </section>
   );
 }
@@ -29,22 +106,24 @@ export default function DashboardSurfaces() {
 function SurfaceCard({
   icon,
   title,
-  body,
+  href,
+  children,
 }: {
   icon: string;
   title: string;
-  body: string;
+  href: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="card p-4">
-      <div className="flex items-center gap-2">
+    <Link
+      href={href}
+      className="card block p-4 transition-colors hover:border-lavender-300"
+    >
+      <div className="mb-1.5 flex items-center gap-2">
         <span className="text-lg">{icon}</span>
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
       </div>
-      <p className="mt-1.5 text-xs leading-relaxed text-ink-faint">{body}</p>
-      <p className="mt-2 inline-block rounded-full bg-lavender-100 px-2 py-0.5 text-[11px] font-medium text-lavender-700">
-        Coming soon
-      </p>
-    </div>
+      {children}
+    </Link>
   );
 }

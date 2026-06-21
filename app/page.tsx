@@ -1,4 +1,5 @@
 import { getMonthSummary, getTrackedMonths } from "@/lib/queries";
+import { getFinanceSummary } from "@/lib/finance";
 import { currentMonth, isValidMonth, monthLabel } from "@/lib/money";
 import { sliceColor } from "@/lib/palette";
 import TopBar from "./components/TopBar";
@@ -22,9 +23,10 @@ export default async function DashboardPage({
     params.month && isValidMonth(params.month) ? params.month : currentMonth();
   const isCurrentMonth = month === currentMonth();
 
-  const [summary, months] = await Promise.all([
+  const [summary, months, finance] = await Promise.all([
     getMonthSummary(month),
     getTrackedMonths(month),
+    getFinanceSummary(),
   ]);
 
   const hasCategories = summary.categories.length > 0;
@@ -126,7 +128,7 @@ export default async function DashboardPage({
               )}
             </section>
 
-            <DashboardSurfaces />
+            <DashboardSurfaces finance={finance} currency={summary.currency} />
           </div>
         )}
       </main>
