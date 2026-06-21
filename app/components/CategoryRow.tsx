@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CategoryWithActual } from "@/lib/types";
 import {
+  currencySymbol,
   formatCurrency,
   formatPercent,
   percentOfIncome,
@@ -83,7 +84,7 @@ export default function CategoryRow({
         <div className="text-right">
           {editing ? (
             <div className="flex items-center gap-1.5">
-              <span className="text-ink-faint">$</span>
+              <span className="text-ink-faint">{currencySymbol(currency)}</span>
               <input
                 autoFocus
                 type="number"

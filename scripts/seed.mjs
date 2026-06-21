@@ -5,7 +5,7 @@
  */
 import postgres from "postgres";
 
-// Targets are illustrative defaults (sum ≈ a $6,000/mo household). All editable.
+// Targets are illustrative defaults (sum ≈ a £6,000/mo household). All editable.
 const CATEGORIES = [
   // Essentials
   { name: "Housing/Rent", group: "essentials", target: 1800, kind: "spending" },
@@ -59,7 +59,7 @@ async function main() {
     await sql.begin(async (tx) => {
       await tx`
         INSERT INTO plan (id, monthly_income, currency)
-        VALUES (1, ${DEFAULT_INCOME}, 'USD')
+        VALUES (1, ${DEFAULT_INCOME}, 'GBP')
         ON CONFLICT (id) DO UPDATE SET monthly_income = EXCLUDED.monthly_income
       `;
       let order = 1;
@@ -72,7 +72,7 @@ async function main() {
       }
     });
 
-    console.log(`Seeded ${CATEGORIES.length} categories and default income $${DEFAULT_INCOME}.`);
+    console.log(`Seeded ${CATEGORIES.length} categories and default income £${DEFAULT_INCOME}.`);
   } finally {
     await sql.end();
   }

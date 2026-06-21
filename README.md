@@ -15,7 +15,7 @@ Goals: _save more, avoid overspending_ — gently.
 - **One shared login.** A single household password; everyone sees the same
   numbers. No per-user accounts.
 - **One fixed plan.** A combined monthly income plus editable spending
-  categories, each with a target entered in **dollars** but shown everywhere as
+  categories, each with a target entered in **pounds** but shown everywhere as
   a **% of income**.
 - **Weekly check-ins.** Each month you overwrite the **running total** spent per
   category. The app compares actual vs plan and flags overspending **softly** —
@@ -154,7 +154,7 @@ middleware.ts         Guards all pages + API routes
 
 - **`plan`** — single row (`id = 1`): `monthly_income`, `currency`, `updated_at`.
 - **`categories`** — `name`, `group` (`essentials | lifestyle | health_family |
-  financial`), `target_amount` (dollars), `kind` (`spending | savings`),
+  financial`), `target_amount` (pounds), `kind` (`spending | savings`),
   `sort_order`, `archived`.
 - **`months`** — `month` text `'YYYY-MM'` (unique).
 - **`actuals`** — `month_id`, `category_id`, `amount` (running total), unique on
