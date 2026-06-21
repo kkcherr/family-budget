@@ -19,7 +19,7 @@ export default function Donut({
   centerValue,
   size = 200,
   thickness = 26,
-  currency = "USD",
+  currency = "GBP",
 }: {
   slices: DonutSlice[];
   centerLabel: string;

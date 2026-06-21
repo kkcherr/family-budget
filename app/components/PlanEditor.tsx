@@ -9,7 +9,12 @@ import {
   GROUP_ORDER,
   Plan,
 } from "@/lib/types";
-import { formatCurrency, formatPercent, percentOfIncome } from "@/lib/money";
+import {
+  currencySymbol,
+  formatCurrency,
+  formatPercent,
+  percentOfIncome,
+} from "@/lib/money";
 
 export default function PlanEditor({
   initialPlan,
@@ -108,7 +113,7 @@ export default function PlanEditor({
           Combined monthly income
         </label>
         <div className="flex items-center gap-2">
-          <span className="text-ink-faint">$</span>
+          <span className="text-ink-faint">{currencySymbol(currency)}</span>
           <input
             id="income"
             type="number"
@@ -242,7 +247,7 @@ function CategoryEditorRow({
 
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-ink-faint">$</span>
+          <span className="text-ink-faint">{currencySymbol(currency)}</span>
           <input
             type="number"
             inputMode="decimal"

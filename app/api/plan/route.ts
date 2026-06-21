@@ -27,7 +27,7 @@ export async function PUT(req: Request) {
   const currency =
     typeof body.currency === "string" && body.currency.length === 3
       ? body.currency.toUpperCase()
-      : "USD";
+      : "GBP";
 
   const plan = await updatePlan(income, currency);
   return NextResponse.json(plan);

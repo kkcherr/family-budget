@@ -1,11 +1,26 @@
 /** Formatting helpers shared across the UI. */
 
-export function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
+export const DEFAULT_CURRENCY = "GBP";
+const LOCALE = "en-GB";
+
+export function formatCurrency(
+  amount: number,
+  currency = DEFAULT_CURRENCY
+): string {
+  return new Intl.NumberFormat(LOCALE, {
     style: "currency",
     currency,
     maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
   }).format(amount);
+}
+
+/** The bare currency symbol (e.g. "£", "$") for use as an input prefix. */
+export function currencySymbol(currency = DEFAULT_CURRENCY): string {
+  const parts = new Intl.NumberFormat(LOCALE, {
+    style: "currency",
+    currency,
+  }).formatToParts(0);
+  return parts.find((p) => p.type === "currency")?.value ?? currency;
 }
 
 export function formatPercent(value: number, fractionDigits = 0): string {

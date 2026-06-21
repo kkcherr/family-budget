@@ -20,14 +20,14 @@ export async function getPlan(): Promise<Plan> {
   return {
     id: 1,
     monthly_income: num(row?.monthly_income),
-    currency: row?.currency ?? "USD",
+    currency: row?.currency ?? "GBP",
     updated_at: row?.updated_at ?? new Date().toISOString(),
   };
 }
 
 export async function updatePlan(
   monthlyIncome: number,
-  currency = "USD"
+  currency = "GBP"
 ): Promise<Plan> {
   await sql`
     INSERT INTO plan (id, monthly_income, currency, updated_at)

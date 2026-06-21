@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS plan (
   id            INTEGER PRIMARY KEY DEFAULT 1,
   monthly_income NUMERIC(12, 2) NOT NULL DEFAULT 0,
-  currency      TEXT NOT NULL DEFAULT 'USD',
+  currency      TEXT NOT NULL DEFAULT 'GBP',
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT plan_singleton CHECK (id = 1)
 );
@@ -40,5 +40,5 @@ CREATE TABLE IF NOT EXISTS actuals (
 
 -- Ensure the singleton plan row always exists.
 INSERT INTO plan (id, monthly_income, currency)
-VALUES (1, 0, 'USD')
+VALUES (1, 0, 'GBP')
 ON CONFLICT (id) DO NOTHING;
