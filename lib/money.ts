@@ -62,3 +62,33 @@ export function shiftMonth(month: string, delta: number): string {
   const d = new Date(y, m - 1 + delta, 1);
   return currentMonth(d);
 }
+
+/** A long, friendly date, e.g. "Sunday, 21 June 2026". */
+export function longDate(date = new Date()): string {
+  return date.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/** Total days in the month containing `date`. */
+export function daysInMonth(date = new Date()): number {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+}
+
+/** Whole days remaining in the month after today (today not counted). */
+export function daysLeftInMonth(date = new Date()): number {
+  return daysInMonth(date) - date.getDate();
+}
+
+/** How far through the month we are, 0..1 (by day). */
+export function monthProgress(date = new Date()): number {
+  return date.getDate() / daysInMonth(date);
+}
+
+/** Short due-date label, e.g. "1 Jul" or "15 Jun". */
+export function shortDate(date: Date): string {
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}

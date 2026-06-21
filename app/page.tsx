@@ -1,12 +1,12 @@
 import { getMonthSummary, getTrackedMonths } from "@/lib/queries";
 import { currentMonth, isValidMonth, monthLabel } from "@/lib/money";
-import { SECTION_LABELS, SECTION_ORDER, Section } from "@/lib/types";
 import { sliceColor } from "@/lib/palette";
 import TopBar from "./components/TopBar";
 import MonthSwitcher from "./components/MonthSwitcher";
+import DashboardHeader from "./components/DashboardHeader";
 import HeadlineSummary from "./components/HeadlineSummary";
+import DashboardSurfaces from "./components/DashboardSurfaces";
 import Donut, { DonutSlice } from "./components/Donut";
-import CategoryRow from "./components/CategoryRow";
 import { formatCurrency, formatPercent } from "@/lib/money";
 import Link from "next/link";
 
@@ -20,6 +20,7 @@ export default async function DashboardPage({
   const params = await searchParams;
   const month =
     params.month && isValidMonth(params.month) ? params.month : currentMonth();
+  const isCurrentMonth = month === currentMonth();
 
   const [summary, months] = await Promise.all([
     getMonthSummary(month),
@@ -28,7 +29,7 @@ export default async function DashboardPage({
 
   const hasCategories = summary.categories.length > 0;
 
-  // Build donut slices by category, colored by section.
+  // Donut slices by category, colored by section.
   const sectionIndex: Record<string, number> = {};
   const slices: DonutSlice[] = summary.categories
     .filter((c) => c.actual > 0)
@@ -43,23 +44,18 @@ export default async function DashboardPage({
     });
 
   const totalForDonut = summary.totalSpent + summary.totalSaved;
-
-  // Group categories by section for the list.
-  const bySection = SECTION_ORDER.map((s) => ({
-    section: s as Section,
-    items: summary.categories.filter((c) => c.section === s),
-  })).filter((g) => g.items.length > 0);
+  const hasActuals = totalForDonut > 0;
 
   return (
     <>
       <TopBar />
       <main className="mx-auto max-w-2xl px-5 pb-20 pt-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-ink">
-              {monthLabel(month)}
+              {isCurrentMonth ? "This month" : monthLabel(month)}
             </h1>
-            <p className="text-sm text-ink-soft">Your weekly check-in</p>
+            <p className="text-sm text-ink-soft">Your weekly money sync</p>
           </div>
           <MonthSwitcher month={month} months={months} />
         </div>
@@ -71,8 +67,7 @@ export default async function DashboardPage({
               Let&apos;s set up your plan
             </h2>
             <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
-              Add your income and expense categories to start your first
-              check-in.
+              Add your income and expense items to start your first check-in.
             </p>
             <Link href="/plan" className="btn-primary mt-5">
               Set up the plan
@@ -80,7 +75,23 @@ export default async function DashboardPage({
           </div>
         ) : (
           <div className="space-y-6">
-            <HeadlineSummary summary={summary} />
+            <DashboardHeader isCurrentMonth={isCurrentMonth} />
+
+            {/* Month-to-date at a glance */}
+            <div>
+              <div className="mb-2 flex items-baseline justify-between px-1">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-lavender-700">
+                  {monthLabel(month)} so far
+                </h2>
+                <Link
+                  href={`/month?month=${month}`}
+                  className="text-sm font-medium text-lavender-600 hover:text-lavender-700"
+                >
+                  Update →
+                </Link>
+              </div>
+              <HeadlineSummary summary={summary} />
+            </div>
 
             <section className="card p-5">
               <div className="mb-4 flex items-baseline justify-between">
@@ -93,40 +104,29 @@ export default async function DashboardPage({
                   of income
                 </span>
               </div>
-              <Donut
-                slices={slices}
-                centerLabel="Used"
-                centerValue={formatPercent(
-                  summary.income > 0 ? totalForDonut / summary.income : 0
-                )}
-                currency={summary.currency}
-              />
-            </section>
-
-            <section className="space-y-5">
-              {bySection.map(({ section, items }) => (
-                <div key={section}>
-                  <h3 className="mb-2.5 px-1 text-sm font-semibold uppercase tracking-wide text-lavender-700">
-                    {SECTION_LABELS[section]}
-                  </h3>
-                  <div className="space-y-2.5">
-                    {items.map((c) => (
-                      <CategoryRow
-                        key={c.id}
-                        category={c}
-                        income={summary.income}
-                        month={month}
-                        currency={summary.currency}
-                      />
-                    ))}
-                  </div>
+              {hasActuals ? (
+                <Donut
+                  slices={slices}
+                  centerLabel="Used"
+                  centerValue={formatPercent(
+                    summary.income > 0 ? totalForDonut / summary.income : 0
+                  )}
+                  currency={summary.currency}
+                />
+              ) : (
+                <div className="py-6 text-center text-sm text-ink-faint">
+                  Nothing logged yet this month.{" "}
+                  <Link
+                    href={`/month?month=${month}`}
+                    className="font-medium text-lavender-600 hover:text-lavender-700"
+                  >
+                    Add your first amounts →
+                  </Link>
                 </div>
-              ))}
+              )}
             </section>
 
-            <p className="pt-2 text-center text-xs text-ink-faint">
-              Tap any amount to update your running total for {monthLabel(month)}.
-            </p>
+            <DashboardSurfaces />
           </div>
         )}
       </main>
