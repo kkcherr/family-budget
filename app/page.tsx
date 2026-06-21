@@ -1,6 +1,6 @@
 import { getMonthSummary, getTrackedMonths } from "@/lib/queries";
 import { currentMonth, isValidMonth, monthLabel } from "@/lib/money";
-import { GROUP_LABELS, GROUP_ORDER, CategoryGroup } from "@/lib/types";
+import { SECTION_LABELS, SECTION_ORDER, Section } from "@/lib/types";
 import { sliceColor } from "@/lib/palette";
 import TopBar from "./components/TopBar";
 import MonthSwitcher from "./components/MonthSwitcher";
@@ -28,26 +28,26 @@ export default async function DashboardPage({
 
   const hasCategories = summary.categories.length > 0;
 
-  // Build donut slices by category (spending + savings), colored by group.
-  const groupIndex: Record<string, number> = {};
+  // Build donut slices by category, colored by section.
+  const sectionIndex: Record<string, number> = {};
   const slices: DonutSlice[] = summary.categories
     .filter((c) => c.actual > 0)
     .map((c) => {
-      const idx = groupIndex[c.group] ?? 0;
-      groupIndex[c.group] = idx + 1;
+      const idx = sectionIndex[c.section] ?? 0;
+      sectionIndex[c.section] = idx + 1;
       return {
         label: c.name,
         value: c.actual,
-        color: sliceColor(c.group, idx),
+        color: sliceColor(c.section, idx),
       };
     });
 
   const totalForDonut = summary.totalSpent + summary.totalSaved;
 
-  // Group categories for the list.
-  const byGroup = GROUP_ORDER.map((g) => ({
-    group: g as CategoryGroup,
-    items: summary.categories.filter((c) => c.group === g),
+  // Group categories by section for the list.
+  const bySection = SECTION_ORDER.map((s) => ({
+    section: s as Section,
+    items: summary.categories.filter((c) => c.section === s),
   })).filter((g) => g.items.length > 0);
 
   return (
@@ -71,8 +71,8 @@ export default async function DashboardPage({
               Let&apos;s set up your plan
             </h2>
             <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
-              Add your combined income and spending categories to start your
-              first check-in.
+              Add your income and expense categories to start your first
+              check-in.
             </p>
             <Link href="/plan" className="btn-primary mt-5">
               Set up the plan
@@ -104,10 +104,10 @@ export default async function DashboardPage({
             </section>
 
             <section className="space-y-5">
-              {byGroup.map(({ group, items }) => (
-                <div key={group}>
+              {bySection.map(({ section, items }) => (
+                <div key={section}>
                   <h3 className="mb-2.5 px-1 text-sm font-semibold uppercase tracking-wide text-lavender-700">
-                    {GROUP_LABELS[group]}
+                    {SECTION_LABELS[section]}
                   </h3>
                   <div className="space-y-2.5">
                     {items.map((c) => (
