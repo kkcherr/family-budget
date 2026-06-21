@@ -1,11 +1,12 @@
 import { sql } from "./db";
 import {
   Category,
-  CategoryGroup,
-  CategoryKind,
   CategoryWithActual,
+  Frequency,
   MonthSummary,
   Plan,
+  Section,
+  monthlyEquivalent,
 } from "./types";
 import { isValidMonth, percentOfIncome } from "./money";
 
@@ -44,9 +45,10 @@ function mapCategory(r: Record<string, unknown>): Category {
   return {
     id: Number(r.id),
     name: String(r.name),
-    group: r.group as CategoryGroup,
+    section: r.section as Section,
+    col: Number(r.col),
     target_amount: num(r.target_amount),
-    kind: r.kind as CategoryKind,
+    frequency: r.frequency as Frequency,
     sort_order: Number(r.sort_order),
     archived: Boolean(r.archived),
   };
@@ -56,27 +58,37 @@ export async function getCategories(
   includeArchived = false
 ): Promise<Category[]> {
   const rows = await sql<Record<string, unknown>[]>`
-    SELECT id, name, "group", target_amount, kind, sort_order, archived
+    SELECT id, name, section, col, target_amount, frequency, sort_order, archived
     FROM categories
     ${includeArchived ? sql`` : sql`WHERE archived = FALSE`}
-    ORDER BY sort_order ASC, id ASC
+    ORDER BY section ASC, col ASC, sort_order ASC, id ASC
   `;
   return rows.map(mapCategory);
 }
 
 export async function createCategory(input: {
   name: string;
-  group: CategoryGroup;
-  target_amount: number;
-  kind: CategoryKind;
+  section: Section;
+  col?: number;
+  target_amount?: number;
+  frequency?: Frequency;
 }): Promise<Category> {
+  const col = input.col ?? 0;
   const next = await sql<{ next: number }[]>`
-    SELECT COALESCE(MAX(sort_order), 0) + 1 AS next FROM categories
+    SELECT COALESCE(MAX(sort_order), 0) + 1 AS next
+    FROM categories WHERE section = ${input.section} AND col = ${col}
   `;
   const rows = await sql<Record<string, unknown>[]>`
-    INSERT INTO categories (name, "group", target_amount, kind, sort_order)
-    VALUES (${input.name}, ${input.group}, ${input.target_amount}, ${input.kind}, ${next[0].next})
-    RETURNING id, name, "group", target_amount, kind, sort_order, archived
+    INSERT INTO categories (name, section, col, target_amount, frequency, sort_order)
+    VALUES (
+      ${input.name},
+      ${input.section},
+      ${col},
+      ${input.target_amount ?? 0},
+      ${input.frequency ?? "monthly"},
+      ${next[0].next}
+    )
+    RETURNING id, name, section, col, target_amount, frequency, sort_order, archived
   `;
   return mapCategory(rows[0]);
 }
@@ -85,21 +97,23 @@ export async function updateCategory(
   id: number,
   input: Partial<{
     name: string;
-    group: CategoryGroup;
+    section: Section;
+    col: number;
     target_amount: number;
-    kind: CategoryKind;
+    frequency: Frequency;
     archived: boolean;
   }>
 ): Promise<Category | null> {
   const rows = await sql<Record<string, unknown>[]>`
     UPDATE categories SET
       name = ${input.name ?? sql`name`},
-      "group" = ${input.group ?? sql`"group"`},
+      section = ${input.section ?? sql`section`},
+      col = ${input.col ?? sql`col`},
       target_amount = ${input.target_amount ?? sql`target_amount`},
-      kind = ${input.kind ?? sql`kind`},
+      frequency = ${input.frequency ?? sql`frequency`},
       archived = ${input.archived ?? sql`archived`}
     WHERE id = ${id}
-    RETURNING id, name, "group", target_amount, kind, sort_order, archived
+    RETURNING id, name, section, col, target_amount, frequency, sort_order, archived
   `;
   return rows[0] ? mapCategory(rows[0]) : null;
 }
@@ -109,11 +123,25 @@ export async function archiveCategory(id: number): Promise<void> {
   await sql`UPDATE categories SET archived = TRUE WHERE id = ${id}`;
 }
 
-/** Persist a new order. Accepts category ids in their desired order. */
-export async function reorderCategories(ids: number[]): Promise<void> {
+/**
+ * Persist a new layout from drag-and-drop. `items` is the full ordered list of
+ * visible categories; each carries its target section + sub-column. sort_order
+ * is assigned by position within each (section, col) group.
+ */
+export async function applyLayout(
+  items: { id: number; section: Section; col: number }[]
+): Promise<void> {
+  const counters = new Map<string, number>();
   await sql.begin(async (tx) => {
-    for (let i = 0; i < ids.length; i++) {
-      await tx`UPDATE categories SET sort_order = ${i + 1} WHERE id = ${ids[i]}`;
+    for (const item of items) {
+      const key = `${item.section}:${item.col}`;
+      const order = (counters.get(key) ?? 0) + 1;
+      counters.set(key, order);
+      await tx`
+        UPDATE categories
+        SET section = ${item.section}, col = ${item.col}, sort_order = ${order}
+        WHERE id = ${item.id}
+      `;
     }
   });
 }
@@ -158,7 +186,7 @@ async function getActualsForMonth(
   return map;
 }
 
-/** Build the full dashboard summary for a month, including derived numbers. */
+/** Build the full month summary, including derived numbers. */
 export async function getMonthSummary(month: string): Promise<MonthSummary> {
   const [plan, categories, actuals] = await Promise.all([
     getPlan(),
@@ -171,13 +199,13 @@ export async function getMonthSummary(month: string): Promise<MonthSummary> {
     actual: actuals.get(c.id) ?? 0,
   }));
 
-  const spending = withActuals.filter((c) => c.kind === "spending");
-  const savings = withActuals.filter((c) => c.kind === "savings");
+  const spending = withActuals.filter((c) => c.section !== "savings");
+  const savings = withActuals.filter((c) => c.section === "savings");
 
   const totalSpent = spending.reduce((s, c) => s + c.actual, 0);
   const totalSaved = savings.reduce((s, c) => s + c.actual, 0);
   const totalPlannedSpending = spending.reduce(
-    (s, c) => s + c.target_amount,
+    (s, c) => s + monthlyEquivalent(c.target_amount, c.frequency),
     0
   );
 

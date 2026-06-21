@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CategoryWithActual } from "@/lib/types";
+import { CategoryWithActual, FREQUENCY_LABELS } from "@/lib/types";
 import {
   currencySymbol,
   formatCurrency,
@@ -27,7 +27,7 @@ export default function CategoryRow({
   const [draft, setDraft] = useState(String(category.actual || ""));
   const [saving, setSaving] = useState(false);
 
-  const isSavings = category.kind === "savings";
+  const isSavings = category.section === "savings";
   const target = category.target_amount;
   const actual = category.actual;
   const ratio = target > 0 ? actual / target : actual > 0 ? 1 : 0;
@@ -76,8 +76,13 @@ export default function CategoryRow({
             )}
           </p>
           <p className="mt-0.5 text-xs text-ink-faint">
-            Target {formatPercent(targetPctIncome)} ·{" "}
-            {formatCurrency(target, currency)}
+            Target {formatCurrency(target, currency)}
+            {category.frequency !== "monthly" && (
+              <span> · {FREQUENCY_LABELS[category.frequency].toLowerCase()}</span>
+            )}
+            {target > 0 && category.frequency === "monthly" && (
+              <span> · {formatPercent(targetPctIncome)} of income</span>
+            )}
           </p>
         </div>
 

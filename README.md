@@ -14,26 +14,29 @@ Goals: _save more, avoid overspending_ — gently.
 
 - **One shared login.** A single household password; everyone sees the same
   numbers. No per-user accounts.
-- **One fixed plan.** A combined monthly income plus editable spending
-  categories, each with a target entered in **pounds** but shown everywhere as
-  a **% of income**.
+- **One fixed plan.** A combined monthly income plus editable **Fixed** and
+  **Variable** expenses and **Savings**, each item with a target in **pounds**
+  and a **payment frequency** (monthly, twice a month, every 3 / 6 / 12 months,
+  one-off) — because not everything hits every month.
+- **Drag to organise.** Fixed and Variable each lay out in two sub-columns;
+  drag items to reorder or move them between columns (works on touch). Add and
+  rename your own items.
 - **Weekly check-ins.** Each month you overwrite the **running total** spent per
-  category. The app compares actual vs plan and flags overspending **softly** —
+  item. The app compares actual vs plan and flags overspending **softly** —
   a warm blush tone, never a harsh red.
-- **Calm, lavender UI.** Soft progress bars per category, a donut for the
-  overall breakdown, and clean big headline numbers (income, total spent, % of
-  income spent, total saved + savings rate, overall over/under vs plan).
-- **Savings shown positively.** Savings is a normal category with its own
-  target, but surfaced as a good thing in the headline.
+- **Calm, lavender UI.** Soft progress bars per item, a donut for the overall
+  breakdown, and clean big headline numbers (income, total spent, % of income
+  spent, total saved + savings rate, overall over/under vs plan).
+- **Savings as its own thing.** A separate, editable set of buckets (e.g.
+  deposit / ISA per person), surfaced positively.
 
-Seeded starter categories (all editable — rename / add / remove / reorder):
+Seeded starter plan (all editable — rename / add / remove / drag-reorder):
 
-| Group | Categories |
+| Section | Items |
 | --- | --- |
-| **Essentials** | Housing/Rent, Utilities, Groceries, Transportation, Insurance |
-| **Lifestyle** | Dining out, Entertainment & subscriptions, Shopping, Travel |
-| **Health & family** | Health/Medical, Childcare/Kids, Pets, Gifts & donations |
-| **Financial** | Savings, Investments, Debt/Loan payments |
+| **Fixed expenses** | Rent, Council Tax, Electricity, Water & Heating, Broadband & Mobile, Car Leasing, Childcare / School, Russian school, Swimming, Sport, Cleaning lady, Dog's insurance, Dog's vet care subscription, Monthly subscriptions |
+| **Variable expenses** | Groceries, Transport, Eating out & Restaurants, Deliveries, Clothes / Shopping, Entertainment, Gifts, Miscellaneous |
+| **Savings** | deposit Vanya, deposit Katya, ISA Vanya, ISA Katya |
 
 ---
 
@@ -144,18 +147,19 @@ lib/
   queries.ts          Data access + derived figures
   money.ts            Currency / percent / month helpers
   types.ts, palette.ts
-migrations/001_init.sql
-scripts/migrate.ts    Idempotent migration runner (tracks applied files)
-scripts/seed.ts       Idempotent starter categories + default income
+migrations/*.sql      Schema migrations (applied in order)
+scripts/migrate.mjs   Idempotent migration runner (tracks applied files)
+scripts/seed.mjs      Idempotent starter plan (fixed / variable / savings)
 middleware.ts         Guards all pages + API routes
 ```
 
 ## 🧮 Data model
 
 - **`plan`** — single row (`id = 1`): `monthly_income`, `currency`, `updated_at`.
-- **`categories`** — `name`, `group` (`essentials | lifestyle | health_family |
-  financial`), `target_amount` (pounds), `kind` (`spending | savings`),
-  `sort_order`, `archived`.
+- **`categories`** — `name`, `section` (`fixed | variable | savings`), `col`
+  (sub-column 0/1), `target_amount` (pounds, per occurrence), `frequency`
+  (`monthly | twice_monthly | every_3_months | every_6_months |
+  every_12_months | one_off`), `sort_order`, `archived`.
 - **`months`** — `month` text `'YYYY-MM'` (unique).
 - **`actuals`** — `month_id`, `category_id`, `amount` (running total), unique on
   `(month_id, category_id)`.

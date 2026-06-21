@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { archiveCategory, updateCategory } from "@/lib/queries";
-import { CategoryGroup, CategoryKind, GROUP_ORDER } from "@/lib/types";
+import {
+  Frequency,
+  FREQUENCY_ORDER,
+  Section,
+  SECTION_ORDER,
+} from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const KINDS: CategoryKind[] = ["spending", "savings"];
 
 export async function PUT(
   req: Request,
@@ -19,9 +22,10 @@ export async function PUT(
 
   let body: {
     name?: string;
-    group?: string;
+    section?: string;
+    col?: number;
     target_amount?: number;
-    kind?: string;
+    frequency?: string;
     archived?: boolean;
   };
   try {
@@ -37,15 +41,18 @@ export async function PUT(
       return NextResponse.json({ error: "Name cannot be empty" }, { status: 400 });
     patch.name = name;
   }
-  if (body.group !== undefined) {
-    if (!GROUP_ORDER.includes(body.group as CategoryGroup))
-      return NextResponse.json({ error: "Invalid group" }, { status: 400 });
-    patch.group = body.group as CategoryGroup;
+  if (body.section !== undefined) {
+    if (!SECTION_ORDER.includes(body.section as Section))
+      return NextResponse.json({ error: "Invalid section" }, { status: 400 });
+    patch.section = body.section as Section;
   }
-  if (body.kind !== undefined) {
-    if (!KINDS.includes(body.kind as CategoryKind))
-      return NextResponse.json({ error: "Invalid kind" }, { status: 400 });
-    patch.kind = body.kind as CategoryKind;
+  if (body.col !== undefined) {
+    patch.col = Number(body.col) === 1 ? 1 : 0;
+  }
+  if (body.frequency !== undefined) {
+    if (!FREQUENCY_ORDER.includes(body.frequency as Frequency))
+      return NextResponse.json({ error: "Invalid frequency" }, { status: 400 });
+    patch.frequency = body.frequency as Frequency;
   }
   if (body.target_amount !== undefined) {
     const t = Number(body.target_amount);

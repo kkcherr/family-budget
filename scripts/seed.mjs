@@ -1,35 +1,46 @@
 /**
- * Seed the editable starter categories and a sensible default income.
+ * Seed the starter Plan: Fixed / Variable expenses (two sub-columns each) and
+ * editable Savings buckets. Amounts and frequencies are left for you to fill in.
  * Idempotent: only seeds when there are no categories yet.
  * Plain ESM so it runs with bare `node` in production. Run with: npm run seed
  */
 import postgres from "postgres";
 
-// Targets are illustrative defaults (sum ≈ a £6,000/mo household). All editable.
-const CATEGORIES = [
-  // Essentials
-  { name: "Housing/Rent", group: "essentials", target: 1800, kind: "spending" },
-  { name: "Utilities", group: "essentials", target: 250, kind: "spending" },
-  { name: "Groceries", group: "essentials", target: 700, kind: "spending" },
-  { name: "Transportation", group: "essentials", target: 350, kind: "spending" },
-  { name: "Insurance", group: "essentials", target: 300, kind: "spending" },
-  // Lifestyle
-  { name: "Dining out", group: "lifestyle", target: 400, kind: "spending" },
-  { name: "Entertainment & subscriptions", group: "lifestyle", target: 150, kind: "spending" },
-  { name: "Shopping", group: "lifestyle", target: 300, kind: "spending" },
-  { name: "Travel", group: "lifestyle", target: 250, kind: "spending" },
-  // Health & family
-  { name: "Health/Medical", group: "health_family", target: 200, kind: "spending" },
-  { name: "Childcare/Kids", group: "health_family", target: 400, kind: "spending" },
-  { name: "Pets", group: "health_family", target: 80, kind: "spending" },
-  { name: "Gifts & donations", group: "health_family", target: 120, kind: "spending" },
-  // Financial
-  { name: "Savings", group: "financial", target: 600, kind: "savings" },
-  { name: "Investments", group: "financial", target: 500, kind: "savings" },
-  { name: "Debt/Loan payments", group: "financial", target: 400, kind: "spending" },
+// section, then two sub-columns of names. frequency defaults to 'monthly',
+// target defaults to 0 — all editable in the Plan screen.
+const FIXED = [
+  // column 0
+  ["Rent", "Council Tax", "Electricity", "Water & Heating", "Broadband & Mobile", "Car Leasing", "Childcare / School"],
+  // column 1
+  ["Russian school", "Swimming", "Sport", "Cleaning lady", "Dog's insurance", "Dog's vet care subscription", "Monthly subscriptions"],
 ];
 
-const DEFAULT_INCOME = 6000;
+const VARIABLE = [
+  // column 0
+  ["Groceries", "Transport", "Eating out & Restaurants", "Deliveries"],
+  // column 1
+  ["Clothes / Shopping", "Entertainment", "Gifts", "Miscellaneous"],
+];
+
+const SAVINGS = [
+  // single column
+  ["deposit Vanya", "deposit Katya", "ISA Vanya", "ISA Katya"],
+];
+
+function rows() {
+  const out = [];
+  const push = (section, cols) => {
+    cols.forEach((names, col) => {
+      names.forEach((name, i) => {
+        out.push({ name, section, col, sort_order: i + 1 });
+      });
+    });
+  };
+  push("fixed", FIXED);
+  push("variable", VARIABLE);
+  push("savings", SAVINGS);
+  return out;
+}
 
 async function main() {
   const connectionString =
@@ -56,23 +67,23 @@ async function main() {
       return;
     }
 
+    const items = rows();
     await sql.begin(async (tx) => {
+      // Ensure the singleton plan row exists; leave income at 0 to be set in-app.
       await tx`
         INSERT INTO plan (id, monthly_income, currency)
-        VALUES (1, ${DEFAULT_INCOME}, 'GBP')
-        ON CONFLICT (id) DO UPDATE SET monthly_income = EXCLUDED.monthly_income
+        VALUES (1, 0, 'GBP')
+        ON CONFLICT (id) DO NOTHING
       `;
-      let order = 1;
-      for (const c of CATEGORIES) {
+      for (const r of items) {
         await tx`
-          INSERT INTO categories (name, "group", target_amount, kind, sort_order)
-          VALUES (${c.name}, ${c.group}, ${c.target}, ${c.kind}, ${order})
+          INSERT INTO categories (name, section, col, target_amount, frequency, sort_order)
+          VALUES (${r.name}, ${r.section}, ${r.col}, 0, 'monthly', ${r.sort_order})
         `;
-        order++;
       }
     });
 
-    console.log(`Seeded ${CATEGORIES.length} categories and default income £${DEFAULT_INCOME}.`);
+    console.log(`Seeded ${items.length} plan items (fixed, variable, savings).`);
   } finally {
     await sql.end();
   }
