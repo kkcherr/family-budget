@@ -1,19 +1,12 @@
 /**
  * Seed the editable starter categories and a sensible default income.
  * Idempotent: only seeds when there are no categories yet.
- * Run with: npm run seed
+ * Plain ESM so it runs with bare `node` in production. Run with: npm run seed
  */
 import postgres from "postgres";
 
-type Seed = {
-  name: string;
-  group: "essentials" | "lifestyle" | "health_family" | "financial";
-  target: number; // dollars
-  kind: "spending" | "savings";
-};
-
 // Targets are illustrative defaults (sum ≈ a $6,000/mo household). All editable.
-const CATEGORIES: Seed[] = [
+const CATEGORIES = [
   // Essentials
   { name: "Housing/Rent", group: "essentials", target: 1800, kind: "spending" },
   { name: "Utilities", group: "essentials", target: 250, kind: "spending" },
@@ -48,14 +41,16 @@ async function main() {
   const isLocal =
     connectionString.includes("localhost") ||
     connectionString.includes("127.0.0.1");
+  const sslDisabled = isLocal || /sslmode=disable/.test(connectionString);
 
   const sql = postgres(connectionString, {
-    ssl: isLocal ? false : "require",
+    ssl: sslDisabled ? false : "require",
     max: 1,
+    onnotice: () => {},
   });
 
   try {
-    const existing = await sql<{ count: string }[]>`SELECT COUNT(*) AS count FROM categories`;
+    const existing = await sql`SELECT COUNT(*) AS count FROM categories`;
     if (Number(existing[0].count) > 0) {
       console.log("Categories already present — skipping seed.");
       return;

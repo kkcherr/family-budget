@@ -1,5 +1,6 @@
 /**
  * Apply SQL migrations from /migrations in filename order.
+ * Plain ESM so it runs with bare `node` (no extra toolchain) in production.
  * Run with: npm run migrate
  */
 import { readdir, readFile } from "node:fs/promises";
@@ -16,10 +17,12 @@ async function main() {
   const isLocal =
     connectionString.includes("localhost") ||
     connectionString.includes("127.0.0.1");
+  const sslDisabled = isLocal || /sslmode=disable/.test(connectionString);
 
   const sql = postgres(connectionString, {
-    ssl: isLocal ? false : "require",
+    ssl: sslDisabled ? false : "require",
     max: 1,
+    onnotice: () => {},
   });
 
   try {

@@ -16,17 +16,21 @@ if (!connectionString) {
   );
 }
 
-// Neon and most managed Postgres require SSL; local dev usually does not.
+// Neon and most managed Postgres require SSL. Local dev and a self-hosted
+// Postgres on a private Docker network do not — opt out via host or
+// `?sslmode=disable` in the connection string.
 const isLocal =
   connectionString.includes("localhost") ||
   connectionString.includes("127.0.0.1");
+const sslDisabled = isLocal || /sslmode=disable/.test(connectionString);
 
 function createClient() {
   return postgres(connectionString, {
-    ssl: isLocal ? false : "require",
+    ssl: sslDisabled ? false : "require",
     max: 5,
     idle_timeout: 20,
     connect_timeout: 15,
+    onnotice: () => {},
   });
 }
 
