@@ -60,7 +60,7 @@ export default function DashboardSurfaces({
       <SurfaceCard icon="🏦" title="Cash position" href="/finances">
         <p
           className={`text-lg font-semibold tabular-nums ${
-            finance.freeMoney >= 0 ? "text-sage-600" : "text-blush-700"
+            finance.freeMoney >= 0 ? "text-sage-600" : "text-terracotta-700"
           }`}
         >
           {formatCurrency(finance.freeMoney, currency)}

@@ -1,6 +1,7 @@
 import { getMonthSummary, getTrackedMonths } from "@/lib/queries";
 import { currentMonth, isValidMonth, monthLabel } from "@/lib/money";
 import { SECTION_LABELS, SECTION_ORDER, Section } from "@/lib/types";
+import { SECTION_BAND } from "@/lib/palette";
 import { formatCurrency, formatPercent } from "@/lib/money";
 import TopBar from "../components/TopBar";
 import MonthSwitcher from "../components/MonthSwitcher";
@@ -74,7 +75,9 @@ export default async function MonthPage({
             <section className="space-y-5">
               {bySection.map(({ section, items }) => (
                 <div key={section}>
-                  <h3 className="mb-2.5 px-1 text-sm font-semibold uppercase tracking-wide text-lavender-700">
+                  <h3
+                    className={`mb-2.5 inline-block rounded-lg px-2.5 py-1 text-sm font-semibold uppercase tracking-wide ${SECTION_BAND[section].bg} ${SECTION_BAND[section].text}`}
+                  >
                     {SECTION_LABELS[section]}
                   </h3>
                   <div className="space-y-2.5">

@@ -101,7 +101,7 @@ function UpcomingRow({
         <button
           onClick={() => setConfirming((v) => !v)}
           aria-label="Remove"
-          className="rounded-lg px-1.5 py-1 text-ink-faint hover:bg-blush-100 hover:text-blush-700"
+          className="rounded-lg px-1.5 py-1 text-ink-faint hover:bg-terracotta-100 hover:text-terracotta-700"
         >
           ✕
         </button>
@@ -123,7 +123,7 @@ function UpcomingRow({
               if (isFinite(a) && a >= 0 && a !== payment.amount) save({ amount: a });
             }}
             placeholder="0"
-            className="w-24 rounded-lg border border-lavender-200 bg-lavender-50 px-2 py-1 text-right tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
+            className="w-24 rounded-lg border border-mist-200 bg-mist-100 px-2 py-1 text-right tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
           />
         </label>
         <label className="flex items-center gap-1.5">
@@ -142,7 +142,7 @@ function UpcomingRow({
                 save({ saved_so_far: s });
             }}
             placeholder="0"
-            className="w-24 rounded-lg border border-lavender-200 bg-lavender-50 px-2 py-1 text-right tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
+            className="w-24 rounded-lg border border-mist-200 bg-mist-100 px-2 py-1 text-right tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
           />
         </label>
         <label className="flex items-center gap-1.5">
@@ -151,7 +151,7 @@ function UpcomingRow({
             type="date"
             value={payment.due_date ?? ""}
             onChange={(e) => save({ due_date: e.target.value || null })}
-            className="rounded-lg border border-lavender-200 bg-lavender-50 px-2 py-1 text-xs outline-none focus:border-lavender-400"
+            className="rounded-lg border border-mist-200 bg-mist-100 px-2 py-1 text-xs outline-none focus:border-lavender-400"
           />
         </label>
       </div>
@@ -189,8 +189,8 @@ function UpcomingRow({
       )}
 
       {confirming && (
-        <div className="mt-2.5 flex items-center justify-between rounded-xl bg-blush-100 px-3 py-2">
-          <span className="text-sm text-blush-700">Remove this payment?</span>
+        <div className="mt-2.5 flex items-center justify-between rounded-xl bg-terracotta-100 px-3 py-2">
+          <span className="text-sm text-terracotta-700">Remove this payment?</span>
           <div className="flex gap-2">
             <button
               onClick={() => setConfirming(false)}
@@ -200,7 +200,7 @@ function UpcomingRow({
             </button>
             <button
               onClick={remove}
-              className="rounded-lg bg-blush-500 px-2.5 py-1 text-sm font-medium text-white hover:bg-blush-700"
+              className="rounded-lg bg-terracotta-500 px-2.5 py-1 text-sm font-medium text-white hover:bg-terracotta-700"
             >
               Remove
             </button>

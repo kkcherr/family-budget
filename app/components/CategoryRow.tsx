@@ -61,7 +61,7 @@ export default function CategoryRow({
     <div
       className={`rounded-2xl border p-3.5 transition-colors ${
         overspent
-          ? "border-blush-300 bg-blush-100/50"
+          ? "border-terracotta-300 bg-terracotta-100/50"
           : "border-lavender-200 bg-surface"
       }`}
     >
@@ -125,7 +125,7 @@ export default function CategoryRow({
             >
               <span
                 className={`block text-lg font-semibold tabular-nums ${
-                  overspent ? "text-blush-700" : "text-ink"
+                  overspent ? "text-terracotta-700" : "text-ink"
                 }`}
               >
                 {formatCurrency(actual, currency)}
@@ -142,7 +142,7 @@ export default function CategoryRow({
         <ProgressBar ratio={ratio} overspent={overspent} savings={isSavings} />
         <span
           className={`w-12 shrink-0 text-right text-xs tabular-nums ${
-            overspent ? "text-blush-700" : "text-ink-soft"
+            overspent ? "text-terracotta-700" : "text-ink-soft"
           }`}
         >
           {target > 0 ? formatPercent(ratio) : "—"}
@@ -150,7 +150,7 @@ export default function CategoryRow({
       </div>
 
       {overspent && (
-        <p className="mt-2 text-xs text-blush-700">
+        <p className="mt-2 text-xs text-terracotta-700">
           {formatCurrency(actual - target, currency)} over target — gently worth
           a look.
         </p>

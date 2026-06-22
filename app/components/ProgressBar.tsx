@@ -1,6 +1,6 @@
 /**
  * Soft progress bar showing actual vs target. Fills lavender while within
- * budget; turns a warm blush when the category is overspent. Capped visually
+ * budget; turns a warm terracotta when the category is overspent. Capped visually
  * at 100% with the overspend conveyed by color, not a jarring overflow.
  */
 export default function ProgressBar({
@@ -15,7 +15,7 @@ export default function ProgressBar({
   const pct = Math.max(0, Math.min(ratio, 1)) * 100;
 
   const fill = overspent
-    ? "bg-blush-500"
+    ? "bg-terracotta-500"
     : savings
     ? "bg-sage-400"
     : "bg-lavender-400";

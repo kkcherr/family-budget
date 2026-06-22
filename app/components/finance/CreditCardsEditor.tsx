@@ -90,7 +90,7 @@ function CardRow({ card, currency }: { card: CreditCard; currency: string }) {
         <button
           onClick={() => setConfirming((v) => !v)}
           aria-label="Remove card"
-          className="rounded-lg px-1.5 py-1 text-ink-faint hover:bg-blush-100 hover:text-blush-700"
+          className="rounded-lg px-1.5 py-1 text-ink-faint hover:bg-terracotta-100 hover:text-terracotta-700"
         >
           ✕
         </button>
@@ -112,7 +112,7 @@ function CardRow({ card, currency }: { card: CreditCard; currency: string }) {
               if (isFinite(b) && b >= 0 && b !== card.balance) save({ balance: b });
             }}
             placeholder="0"
-            className="w-24 rounded-lg border border-lavender-200 bg-lavender-50 px-2 py-1 text-right text-sm tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
+            className="w-24 rounded-lg border border-mist-200 bg-mist-100 px-2 py-1 text-right text-sm tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
           />
         </label>
 
@@ -141,8 +141,8 @@ function CardRow({ card, currency }: { card: CreditCard; currency: string }) {
       )}
 
       {confirming && (
-        <div className="mt-2.5 flex items-center justify-between rounded-xl bg-blush-100 px-3 py-2">
-          <span className="text-sm text-blush-700">Remove this card?</span>
+        <div className="mt-2.5 flex items-center justify-between rounded-xl bg-terracotta-100 px-3 py-2">
+          <span className="text-sm text-terracotta-700">Remove this card?</span>
           <div className="flex gap-2">
             <button
               onClick={() => setConfirming(false)}
@@ -152,7 +152,7 @@ function CardRow({ card, currency }: { card: CreditCard; currency: string }) {
             </button>
             <button
               onClick={remove}
-              className="rounded-lg bg-blush-500 px-2.5 py-1 text-sm font-medium text-white hover:bg-blush-700"
+              className="rounded-lg bg-terracotta-500 px-2.5 py-1 text-sm font-medium text-white hover:bg-terracotta-700"
             >
               Remove
             </button>
@@ -182,7 +182,7 @@ function ScheduleControls({
           else if (due_kind === "fixed_date") onSave({ due_kind });
           else onSave({ due_kind });
         }}
-        className="rounded-lg border border-lavender-200 bg-lavender-50 px-2 py-1 text-xs outline-none focus:border-lavender-400"
+        className="rounded-lg border border-mist-200 bg-mist-100 px-2 py-1 text-xs outline-none focus:border-lavender-400"
       >
         <option value="monthly_day">Monthly on day</option>
         <option value="fixed_date">Fixed date</option>
@@ -199,7 +199,7 @@ function ScheduleControls({
             const d = Number(e.target.value);
             if (Number.isInteger(d) && d >= 1 && d <= 28) onSave({ due_day: d });
           }}
-          className="w-14 rounded-lg border border-lavender-200 bg-lavender-50 px-2 py-1 text-center text-xs tabular-nums outline-none focus:border-lavender-400"
+          className="w-14 rounded-lg border border-mist-200 bg-mist-100 px-2 py-1 text-center text-xs tabular-nums outline-none focus:border-lavender-400"
         />
       )}
 
@@ -208,7 +208,7 @@ function ScheduleControls({
           type="date"
           value={card.due_date ?? ""}
           onChange={(e) => onSave({ due_date: e.target.value || null })}
-          className="rounded-lg border border-lavender-200 bg-lavender-50 px-2 py-1 text-xs outline-none focus:border-lavender-400"
+          className="rounded-lg border border-mist-200 bg-mist-100 px-2 py-1 text-xs outline-none focus:border-lavender-400"
         />
       )}
     </div>
