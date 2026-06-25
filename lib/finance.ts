@@ -6,6 +6,7 @@ import {
   FinanceSummary,
   UpcomingPayment,
   nextDue,
+  totalOwed,
 } from "./finance-types";
 
 export type {
@@ -25,6 +26,7 @@ function mapCard(r: Record<string, unknown>): CreditCard {
     id: Number(r.id),
     name: String(r.name),
     balance: num(r.balance),
+    statement_balance: num(r.statement_balance),
     due_kind: r.due_kind as DueKind,
     due_day: r.due_day == null ? null : Number(r.due_day),
     due_date: (r.due_date as string | null) ?? null,
@@ -37,7 +39,7 @@ function mapCard(r: Record<string, unknown>): CreditCard {
 
 export async function getCreditCards(): Promise<CreditCard[]> {
   const rows = await sql<Record<string, unknown>[]>`
-    SELECT id, name, balance, due_kind, due_day, due_date::text AS due_date,
+    SELECT id, name, balance, statement_balance, due_kind, due_day, due_date::text AS due_date,
            statement_day, note, sort_order, archived
     FROM credit_cards WHERE archived = FALSE
     ORDER BY sort_order ASC, id ASC
@@ -52,7 +54,7 @@ export async function createCreditCard(name: string): Promise<CreditCard> {
   const rows = await sql<Record<string, unknown>[]>`
     INSERT INTO credit_cards (name, due_kind, due_day, sort_order)
     VALUES (${name}, 'monthly_day', 1, ${next[0].n})
-    RETURNING id, name, balance, due_kind, due_day, due_date::text AS due_date,
+    RETURNING id, name, balance, statement_balance, due_kind, due_day, due_date::text AS due_date,
               statement_day, note, sort_order, archived
   `;
   return mapCard(rows[0]);
@@ -68,6 +70,7 @@ export async function updateCreditCard(
     UPDATE credit_cards SET
       name = ${p.name ?? sql`name`},
       balance = ${p.balance ?? sql`balance`},
+      statement_balance = ${p.statement_balance === undefined ? sql`statement_balance` : p.statement_balance},
       due_kind = ${p.due_kind ?? sql`due_kind`},
       due_day = ${p.due_day === undefined ? sql`due_day` : p.due_day},
       due_date = ${p.due_date === undefined ? sql`due_date` : p.due_date},
@@ -75,7 +78,7 @@ export async function updateCreditCard(
       note = ${p.note === undefined ? sql`note` : p.note},
       archived = ${p.archived ?? sql`archived`}
     WHERE id = ${id}
-    RETURNING id, name, balance, due_kind, due_day, due_date::text AS due_date,
+    RETURNING id, name, balance, statement_balance, due_kind, due_day, due_date::text AS due_date,
               statement_day, note, sort_order, archived
   `;
   return rows[0] ? mapCard(rows[0]) : null;
@@ -84,6 +87,24 @@ export async function updateCreditCard(
 export async function archiveCreditCard(id: number): Promise<void> {
   await sql`UPDATE credit_cards SET archived = TRUE WHERE id = ${id}`;
 }
+
+/** Persist a drag-reorder: ids in their new order set sort_order 1..n. */
+async function reorder(table: "credit_cards" | "accounts" | "upcoming_payments", ids: number[]) {
+  await sql.begin(async (tx) => {
+    for (let i = 0; i < ids.length; i++) {
+      if (table === "credit_cards")
+        await tx`UPDATE credit_cards SET sort_order = ${i + 1} WHERE id = ${ids[i]}`;
+      else if (table === "accounts")
+        await tx`UPDATE accounts SET sort_order = ${i + 1} WHERE id = ${ids[i]}`;
+      else
+        await tx`UPDATE upcoming_payments SET sort_order = ${i + 1} WHERE id = ${ids[i]}`;
+    }
+  });
+}
+
+export const reorderCreditCards = (ids: number[]) => reorder("credit_cards", ids);
+export const reorderAccounts = (ids: number[]) => reorder("accounts", ids);
+export const reorderUpcomingPayments = (ids: number[]) => reorder("upcoming_payments", ids);
 
 // --- Accounts --------------------------------------------------------------
 
@@ -214,7 +235,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     getUpcomingPayments(),
   ]);
 
-  const totalCardDebt = cards.reduce((s, c) => s + c.balance, 0);
+  const totalCardDebt = cards.reduce((s, c) => s + totalOwed(c), 0);
   const totalCash = accounts.reduce((s, a) => s + a.balance, 0);
 
   // Soonest upcoming card payment by due date.

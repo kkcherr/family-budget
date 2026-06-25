@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Account } from "@/lib/finance-types";
 import { currencySymbol, formatCurrency } from "@/lib/money";
+import { SortableList, SortableRow, useOrder } from "./Sortable";
 
 export default function AccountsEditor({
   accounts,
@@ -17,6 +18,18 @@ export default function AccountsEditor({
   const router = useRouter();
   const totalCash = accounts.reduce((s, a) => s + a.balance, 0);
   const free = totalCash - totalCardDebt;
+
+  const byId = Object.fromEntries(accounts.map((a) => [a.id, a]));
+  const [order, setOrder] = useOrder(accounts.map((a) => a.id));
+  async function onReorder(next: number[]) {
+    setOrder(next);
+    await fetch("/api/accounts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: next }),
+    });
+    router.refresh();
+  }
 
   async function add() {
     await fetch("/api/accounts", {
@@ -52,16 +65,21 @@ export default function AccountsEditor({
         />
       </div>
 
-      <div className="space-y-2.5">
-        {accounts.length === 0 && (
-          <p className="card px-4 py-5 text-center text-sm text-ink-faint">
-            No accounts yet.
-          </p>
-        )}
-        {accounts.map((a) => (
-          <AccountRow key={a.id} account={a} currency={currency} />
-        ))}
-      </div>
+      {accounts.length === 0 ? (
+        <p className="card px-4 py-5 text-center text-sm text-ink-faint">
+          No accounts yet.
+        </p>
+      ) : (
+        <SortableList ids={order} onReorder={onReorder}>
+          {order.map((id) =>
+            byId[id] ? (
+              <SortableRow key={id} id={id}>
+                <AccountRow account={byId[id]} currency={currency} />
+              </SortableRow>
+            ) : null
+          )}
+        </SortableList>
+      )}
     </section>
   );
 }

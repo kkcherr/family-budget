@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createAccount, getAccounts } from "@/lib/finance";
+import { createAccount, getAccounts, reorderAccounts } from "@/lib/finance";
+import { parseIds } from "@/lib/reorder";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,4 +18,11 @@ export async function POST(req: Request) {
   }
   const name = String(body.name ?? "").trim() || "New account";
   return NextResponse.json(await createAccount(name), { status: 201 });
+}
+
+export async function PATCH(req: Request) {
+  const ids = await parseIds(req);
+  if (!ids) return NextResponse.json({ error: "ids array required" }, { status: 400 });
+  await reorderAccounts(ids);
+  return NextResponse.json({ ok: true });
 }

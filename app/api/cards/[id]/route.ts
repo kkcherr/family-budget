@@ -5,7 +5,7 @@ import { isValidDateStr } from "@/lib/finance-types";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DUE_KINDS: DueKind[] = ["monthly_day", "fixed_date", "none"];
+const DUE_KINDS: DueKind[] = ["monthly_day", "fixed_date", "none", "statement"];
 
 export async function PUT(
   req: Request,
@@ -37,6 +37,12 @@ export async function PUT(
     if (!isFinite(b) || b < 0)
       return NextResponse.json({ error: "balance must be ≥ 0" }, { status: 400 });
     patch.balance = b;
+  }
+  if (body.statement_balance !== undefined) {
+    const b = Number(body.statement_balance);
+    if (!isFinite(b) || b < 0)
+      return NextResponse.json({ error: "statement_balance must be ≥ 0" }, { status: 400 });
+    patch.statement_balance = b;
   }
   if (body.due_kind !== undefined) {
     if (!DUE_KINDS.includes(body.due_kind as DueKind))
