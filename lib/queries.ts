@@ -234,14 +234,15 @@ export async function getMonthSummary(month: string): Promise<MonthSummary> {
     return { ...c, planned: p, actual };
   });
 
+  // Savings is no longer a Month category; everything left after expenses is
+  // what's available to save this month.
   const spending = rows.filter((c) => c.section !== "savings");
-  const savings = rows.filter((c) => c.section === "savings");
 
   const totalSpent = spending.reduce((s, c) => s + c.actual, 0);
-  const totalSaved = savings.reduce((s, c) => s + c.actual, 0);
   const totalPlannedSpending = spending.reduce((s, c) => s + c.planned, 0);
 
   const income = plan.monthly_income;
+  const leftToSave = income - totalSpent; // auto: income − all expenses
 
   return {
     month,
@@ -249,12 +250,12 @@ export async function getMonthSummary(month: string): Promise<MonthSummary> {
     currency: plan.currency,
     categories: rows,
     totalSpent,
-    totalSaved,
+    totalSaved: leftToSave,
     totalPlannedSpending,
     percentOfIncomeSpent: percentOfIncome(totalSpent, income),
-    savingsRate: percentOfIncome(totalSaved, income),
+    savingsRate: percentOfIncome(leftToSave, income),
     overUnder: totalPlannedSpending - totalSpent,
-    projectedLeftover: income - totalSpent - totalSaved,
+    projectedLeftover: leftToSave,
   };
 }
 
@@ -320,11 +321,12 @@ export async function getYearSummary(year: number): Promise<YearSummary> {
     // Don't project past the current month.
     if (month <= today) {
       for (const c of categories) {
-        if (c.section === "savings") saved += resolve(c.id, month);
-        else if (c.section === "variable")
+        if (c.section === "variable")
           spent += actualByKey.get(`${c.id}|${month}`) ?? 0;
         else spent += resolve(c.id, month); // fixed
       }
+      // Saved = what's left of income after expenses.
+      saved = Math.max(0, plan.monthly_income - spent);
     }
     points.push({ month, monthIndex: i, spent, saved });
   }

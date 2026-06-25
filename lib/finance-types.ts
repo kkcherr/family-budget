@@ -36,12 +36,22 @@ export interface UpcomingPayment {
   archived: boolean;
 }
 
+export interface SavingsPot {
+  id: number;
+  name: string;
+  balance: number;
+  sort_order: number;
+  archived: boolean;
+}
+
 export interface FinanceSummary {
   cards: CreditCard[];
   accounts: Account[];
   upcoming: UpcomingPayment[];
+  savings: SavingsPot[];
   totalCardDebt: number;
   totalCash: number;
+  totalSavings: number; // sum of savings pots
   freeMoney: number; // cash - card debt
   nextCardPayment: { card: CreditCard; due: string | null } | null;
   totalStillToSetAside: number;
