@@ -1,10 +1,36 @@
 import { Section } from "./types";
 
+/**
+ * Section band styling (the "Band A / Band B" colour roles): Fixed sits on
+ * lavender, Variable on warm butter, Savings on sage. Class strings are literal
+ * so Tailwind keeps them.
+ */
+export const SECTION_BAND: Record<
+  Section,
+  { bg: string; text: string; border: string }
+> = {
+  fixed: {
+    bg: "bg-lavender-100",
+    text: "text-lavender-700",
+    border: "border-lavender-200",
+  },
+  variable: {
+    bg: "bg-butter-100",
+    text: "text-butter-700",
+    border: "border-butter-200",
+  },
+  savings: {
+    bg: "bg-sage-100",
+    text: "text-sage-600",
+    border: "border-sage-400/40",
+  },
+};
+
 /** A soft base color per section, used for donut slices and accents. */
 export const SECTION_COLORS: Record<Section, string> = {
-  fixed: "#9F8FD9", // lavender
-  variable: "#B7A6E0", // light lavender
-  savings: "#9FCBB4", // sage — savings leans positive
+  fixed: "#9F8FD9", // lavender (Band A)
+  variable: "#E6D28C", // butter (Band B)
+  savings: "#8FC3AC", // sage — savings leans positive
 };
 
 /**

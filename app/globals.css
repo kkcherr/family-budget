@@ -40,7 +40,7 @@ body {
   }
 
   .input {
-    @apply w-full rounded-xl border border-lavender-200 bg-lavender-50 px-3.5 py-2.5
+    @apply w-full rounded-xl border border-mist-200 bg-mist-100 px-3.5 py-2.5
       text-ink placeholder:text-ink-faint focus:border-lavender-400
       focus:bg-white outline-none transition-colors;
   }

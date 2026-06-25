@@ -16,7 +16,7 @@ function Stat({
     tone === "positive"
       ? "text-sage-600"
       : tone === "warn"
-      ? "text-blush-700"
+      ? "text-terracotta-700"
       : "text-ink";
   return (
     <div className="card p-4">

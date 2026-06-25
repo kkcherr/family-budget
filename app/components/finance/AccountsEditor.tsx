@@ -44,11 +44,11 @@ export default function AccountsEditor({
       {/* Cash position summary */}
       <div className="card mb-2.5 grid grid-cols-3 gap-2 p-3.5 text-center">
         <Stat label="Cash" value={formatCurrency(totalCash, currency)} />
-        <Stat label="Card debt" value={formatCurrency(totalCardDebt, currency)} tone="blush" />
+        <Stat label="Card debt" value={formatCurrency(totalCardDebt, currency)} tone="over" />
         <Stat
           label="Free money"
           value={formatCurrency(free, currency)}
-          tone={free >= 0 ? "sage" : "blush"}
+          tone={free >= 0 ? "sage" : "over"}
         />
       </div>
 
@@ -73,10 +73,10 @@ function Stat({
 }: {
   label: string;
   value: string;
-  tone?: "sage" | "blush";
+  tone?: "sage" | "over";
 }) {
   const color =
-    tone === "sage" ? "text-sage-600" : tone === "blush" ? "text-blush-700" : "text-ink";
+    tone === "sage" ? "text-sage-600" : tone === "over" ? "text-terracotta-700" : "text-ink";
   return (
     <div>
       <p className={`text-base font-semibold tabular-nums ${color}`}>{value}</p>
@@ -125,7 +125,7 @@ function AccountRow({ account, currency }: { account: Account; currency: string 
           if (isFinite(b) && b !== account.balance) save({ balance: b });
         }}
         placeholder="0"
-        className="w-24 rounded-lg border border-lavender-200 bg-lavender-50 px-2 py-1 text-right text-sm tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
+        className="w-24 rounded-lg border border-mist-200 bg-mist-100 px-2 py-1 text-right text-sm tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
       />
       {confirming ? (
         <div className="flex gap-1">
@@ -137,7 +137,7 @@ function AccountRow({ account, currency }: { account: Account; currency: string 
           </button>
           <button
             onClick={remove}
-            className="rounded-lg bg-blush-500 px-2 py-1 text-xs font-medium text-white hover:bg-blush-700"
+            className="rounded-lg bg-terracotta-500 px-2 py-1 text-xs font-medium text-white hover:bg-terracotta-700"
           >
             Remove
           </button>
@@ -146,7 +146,7 @@ function AccountRow({ account, currency }: { account: Account; currency: string 
         <button
           onClick={() => setConfirming(true)}
           aria-label="Remove account"
-          className="rounded-lg px-1.5 py-1 text-ink-faint hover:bg-blush-100 hover:text-blush-700"
+          className="rounded-lg px-1.5 py-1 text-ink-faint hover:bg-terracotta-100 hover:text-terracotta-700"
         >
           ✕
         </button>

@@ -8,9 +8,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Calm light-lavender palette (see BUILD_SPEC.md visual direction)
+        // "Lavender Fields" palette — gentle, modern. Roles named to match the
+        // colour code: Banner, Band A, Band B, Input, Good, Over.
         canvas: "#F7F5FB",
         surface: "#FFFFFF",
+        // Banner + Band A (lavender)
         lavender: {
           50: "#FBFAFE",
           100: "#F2EEFA",
@@ -18,21 +20,38 @@ const config: Config = {
           300: "#D3C7ED",
           400: "#B7A6E0",
           500: "#9F8FD9",
-          600: "#7C6BB0",
+          600: "#7C6BB0", // banner / primary
           700: "#5E4F8C",
         },
-        // Positive / savings — calm green-lavender sage
+        // Band B (warm cream / butter) — used to distinguish Variable expenses
+        butter: {
+          100: "#FAF1D6",
+          200: "#F1E3B4",
+          300: "#E6D28C",
+          600: "#A8923E",
+          700: "#7E6E2E",
+        },
+        // Input (calm blue-grey) — input fields and amount chips
+        mist: {
+          100: "#EAF0F4",
+          200: "#DCE6EC",
+          300: "#C5D4DD",
+          600: "#6E8593",
+        },
+        // Good / savings (sage)
         sage: {
           100: "#E8F1EC",
-          400: "#9FCBB4",
+          400: "#8FC3AC",
+          500: "#6FAE90",
           600: "#5FA384",
         },
-        // Overspend — warm blush/rose, never harsh red
-        blush: {
-          100: "#FBEEF1",
-          300: "#F2CDD6",
-          500: "#E8A9B8",
-          700: "#C77E91",
+        // Over plan / overspend (warm terracotta — never harsh red)
+        terracotta: {
+          100: "#F8E8DF",
+          300: "#EBC3B0",
+          400: "#E0A187",
+          500: "#D6896A",
+          700: "#B0613F",
         },
         ink: {
           DEFAULT: "#3A3450",

@@ -27,6 +27,7 @@ import {
   monthlyEquivalent,
 } from "@/lib/types";
 import { currencySymbol, formatCurrency, formatPercent, percentOfIncome } from "@/lib/money";
+import { SECTION_BAND } from "@/lib/palette";
 import SortableCard from "./plan/SortableCard";
 import {
   Layout,
@@ -248,6 +249,7 @@ export default function PlanEditor({
         <div className="grid gap-4 lg:grid-cols-2">
           <SectionBlock
             title="Fixed expenses"
+            section="fixed"
             onAdd={() => addCategory("fixed")}
           >
             <div className="grid grid-cols-2 gap-2">
@@ -268,6 +270,7 @@ export default function PlanEditor({
 
           <SectionBlock
             title="Variable expenses"
+            section="variable"
             onAdd={() => addCategory("variable")}
           >
             <div className="grid grid-cols-2 gap-2">
@@ -289,7 +292,7 @@ export default function PlanEditor({
 
         {/* Savings */}
         <div className="mt-4">
-          <SectionBlock title="Savings" tone="sage" onAdd={() => addCategory("savings")}>
+          <SectionBlock title="Savings" section="savings" onAdd={() => addCategory("savings")}>
             <Column
               id={containerKey("savings", 0)}
               layout={layout}
@@ -338,28 +341,25 @@ function SummaryPill({
 
 function SectionBlock({
   title,
-  tone,
+  section,
   onAdd,
   children,
 }: {
   title: string;
-  tone?: "sage";
+  section: Section;
   onAdd: () => void;
   children: React.ReactNode;
 }) {
+  const band = SECTION_BAND[section];
   return (
-    <section className="card p-4">
+    <section className={`rounded-2xl border ${band.border} ${band.bg} p-4 shadow-soft-sm`}>
       <div className="mb-3 flex items-center justify-between">
-        <h3
-          className={`text-sm font-semibold uppercase tracking-wide ${
-            tone === "sage" ? "text-sage-600" : "text-lavender-700"
-          }`}
-        >
+        <h3 className={`text-sm font-semibold uppercase tracking-wide ${band.text}`}>
           {title}
         </h3>
         <button
           onClick={onAdd}
-          className="rounded-lg bg-lavender-100 px-2.5 py-1 text-sm font-medium text-lavender-700 hover:bg-lavender-200"
+          className="rounded-lg bg-surface/70 px-2.5 py-1 text-sm font-medium text-ink-soft hover:bg-surface"
         >
           + Add
         </button>
@@ -394,7 +394,7 @@ function Column({
       <div
         ref={setNodeRef}
         className={`flex min-h-[64px] flex-col gap-2 rounded-2xl p-1.5 transition-colors ${
-          isOver ? "bg-lavender-100" : "bg-lavender-50/40"
+          isOver ? "bg-white/70" : "bg-white/30"
         }`}
       >
         {ids.map((cid) =>

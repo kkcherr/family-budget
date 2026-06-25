@@ -76,7 +76,7 @@ export default function SortableCard({
           type="button"
           onClick={() => setConfirming((v) => !v)}
           aria-label="Remove"
-          className="rounded-lg px-1.5 py-1 text-ink-faint hover:bg-blush-100 hover:text-blush-700"
+          className="rounded-lg px-1.5 py-1 text-ink-faint hover:bg-terracotta-100 hover:text-terracotta-700"
         >
           ✕
         </button>
@@ -97,12 +97,12 @@ export default function SortableCard({
               onChange({ target_amount: t });
           }}
           placeholder="0"
-          className="w-20 rounded-lg border border-lavender-200 bg-lavender-50 px-2 py-1 text-right text-sm tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
+          className="w-20 rounded-lg border border-mist-200 bg-mist-100 px-2 py-1 text-right text-sm tabular-nums outline-none focus:border-lavender-400 focus:bg-white"
         />
         <select
           value={category.frequency}
           onChange={(e) => onChange({ frequency: e.target.value as Frequency })}
-          className="min-w-0 flex-1 rounded-lg border border-lavender-200 bg-lavender-50 px-1.5 py-1 text-xs outline-none focus:border-lavender-400"
+          className="min-w-0 flex-1 rounded-lg border border-mist-200 bg-mist-100 px-1.5 py-1 text-xs outline-none focus:border-lavender-400"
         >
           {FREQUENCY_ORDER.map((f) => (
             <option key={f} value={f}>
@@ -121,8 +121,8 @@ export default function SortableCard({
       )}
 
       {confirming && (
-        <div className="mt-2 flex items-center justify-between rounded-xl bg-blush-100 px-2.5 py-1.5">
-          <span className="text-xs text-blush-700">Remove?</span>
+        <div className="mt-2 flex items-center justify-between rounded-xl bg-terracotta-100 px-2.5 py-1.5">
+          <span className="text-xs text-terracotta-700">Remove?</span>
           <div className="flex gap-1.5">
             <button
               onClick={() => setConfirming(false)}
@@ -132,7 +132,7 @@ export default function SortableCard({
             </button>
             <button
               onClick={onRemove}
-              className="rounded-lg bg-blush-500 px-2 py-0.5 text-xs font-medium text-white hover:bg-blush-700"
+              className="rounded-lg bg-terracotta-500 px-2 py-0.5 text-xs font-medium text-white hover:bg-terracotta-700"
             >
               Remove
             </button>
