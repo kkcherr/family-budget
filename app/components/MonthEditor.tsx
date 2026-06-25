@@ -71,11 +71,13 @@ export default function MonthEditor({
   );
 
   const tally = useMemo(() => {
-    const spent = Object.values(byId)
-      .filter((c) => c.section !== "savings")
-      .reduce((s, c) => s + c.actual, 0);
-    const leftToSave = income - spent; // income − all expenses
-    return { spent, leftToSave };
+    const all = Object.values(byId);
+    const sum = (section: Section) =>
+      all.filter((c) => c.section === section).reduce((s, c) => s + c.actual, 0);
+    const fixed = sum("fixed");
+    const variable = sum("variable");
+    const spent = fixed + variable;
+    return { spent, fixed, variable, leftToSave: income - spent };
   }, [byId, income]);
 
   // --- Income --------------------------------------------------------------
@@ -233,8 +235,8 @@ export default function MonthEditor({
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-          <Pill label="Spent" value={formatCurrency(tally.spent, currency)} sub={formatPercent(percentOfIncome(tally.spent, income))} />
-          <Pill label="Can be saved" value={formatCurrency(tally.leftToSave, currency)} sub={`${formatPercent(percentOfIncome(tally.leftToSave, income))} of income`} tone="sage" />
+          <Pill label="Spent up to today" value={formatCurrency(tally.spent, currency)} sub={formatPercent(percentOfIncome(tally.spent, income))} />
+          <Pill label="Left this month" value={formatCurrency(tally.leftToSave, currency)} sub={`${formatPercent(percentOfIncome(tally.leftToSave, income))} of income`} tone="sage" />
         </div>
       </section>
 
@@ -246,7 +248,7 @@ export default function MonthEditor({
         onDragEnd={handleDragEnd}
       >
         <div className="grid gap-4 lg:grid-cols-2">
-          <SectionBlock section="fixed" onAdd={() => addCategory("fixed")}>
+          <SectionBlock section="fixed" total={formatCurrency(tally.fixed, currency)} onAdd={() => addCategory("fixed")}>
             <div className="grid grid-cols-2 gap-2">
               {[0, 1].map((col) => (
                 <Column key={col} id={containerKey("fixed", col)} layout={layout} byId={byId} {...cardProps} />
@@ -254,7 +256,7 @@ export default function MonthEditor({
             </div>
           </SectionBlock>
 
-          <SectionBlock section="variable" onAdd={() => addCategory("variable")}>
+          <SectionBlock section="variable" total={formatCurrency(tally.variable, currency)} onAdd={() => addCategory("variable")}>
             <div className="grid grid-cols-2 gap-2">
               {[0, 1].map((col) => (
                 <Column key={col} id={containerKey("variable", col)} layout={layout} byId={byId} {...cardProps} />
@@ -302,20 +304,27 @@ function Pill({
 
 function SectionBlock({
   section,
+  total,
   onAdd,
   children,
 }: {
   section: Section;
+  total?: string;
   onAdd: () => void;
   children: React.ReactNode;
 }) {
   const band = SECTION_BAND[section];
   return (
     <section className={`rounded-2xl border ${band.border} ${band.bg} p-4 shadow-soft-sm`}>
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className={`text-sm font-semibold uppercase tracking-wide ${band.text}`}>
-          {SECTION_LABELS[section]}
-        </h3>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <h3 className={`text-sm font-semibold uppercase tracking-wide ${band.text}`}>
+            {SECTION_LABELS[section]}
+          </h3>
+          {total && (
+            <span className="text-sm font-semibold tabular-nums text-ink">{total}</span>
+          )}
+        </div>
         <button
           onClick={onAdd}
           className="rounded-lg bg-surface/70 px-2.5 py-1 text-sm font-medium text-ink-soft hover:bg-surface"

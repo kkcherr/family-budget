@@ -1,6 +1,6 @@
 import { getMonthSummary, getPlan, getTrackedMonths } from "@/lib/queries";
 import { getFinanceSummary } from "@/lib/finance";
-import { currentMonth, isValidMonth, monthLabel } from "@/lib/money";
+import { currentMonth, formatCurrency, isValidMonth, monthLabel } from "@/lib/money";
 import TopBar from "../components/TopBar";
 import MonthSwitcher from "../components/MonthSwitcher";
 import MonthEditor from "../components/MonthEditor";
@@ -25,6 +25,7 @@ export default async function MonthPage({
     getFinanceSummary(),
   ]);
   const currency = plan.currency;
+  const covers = finance.totalCash - finance.totalCardDebt; // positive = can cover
 
   return (
     <>
@@ -40,15 +41,39 @@ export default async function MonthPage({
           <MonthSwitcher month={month} months={months} />
         </div>
 
-        <MonthEditor initialPlan={plan} initialCategories={summary.categories} month={month} />
-
-        <div className="mt-8 space-y-8">
+        {/* Cards vs cash, side by side for comparison */}
+        <div className="grid gap-4 lg:grid-cols-2">
           <CreditCardsEditor cards={finance.cards} currency={currency} />
-          <AccountsEditor
-            accounts={finance.accounts}
-            currency={currency}
-            totalCardDebt={finance.totalCardDebt}
-          />
+          <AccountsEditor accounts={finance.accounts} currency={currency} />
+        </div>
+
+        {/* Can the accounts cover the cards? */}
+        <div
+          className={`mt-3 rounded-2xl border p-4 text-center ${
+            covers >= 0
+              ? "border-sage-400/40 bg-sage-100 text-sage-600"
+              : "border-terracotta-300 bg-terracotta-100 text-terracotta-700"
+          }`}
+        >
+          {covers >= 0 ? (
+            <p className="text-sm">
+              Your accounts cover the cards —{" "}
+              <strong>{formatCurrency(covers, currency)}</strong> to spare
+            </p>
+          ) : (
+            <p className="text-sm">
+              <strong>{formatCurrency(Math.abs(covers), currency)}</strong> short of
+              covering the cards
+            </p>
+          )}
+          <p className="mt-0.5 text-[11px] text-ink-faint">
+            {formatCurrency(finance.totalCash, currency)} in accounts ·{" "}
+            {formatCurrency(finance.totalCardDebt, currency)} owed on cards
+          </p>
+        </div>
+
+        <div className="mt-6">
+          <MonthEditor initialPlan={plan} initialCategories={summary.categories} month={month} />
         </div>
       </main>
     </>

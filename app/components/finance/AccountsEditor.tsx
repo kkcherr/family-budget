@@ -9,15 +9,12 @@ import { SortableList, SortableRow, useOrder } from "./Sortable";
 export default function AccountsEditor({
   accounts,
   currency,
-  totalCardDebt,
 }: {
   accounts: Account[];
   currency: string;
-  totalCardDebt: number;
 }) {
   const router = useRouter();
   const totalCash = accounts.reduce((s, a) => s + a.balance, 0);
-  const free = totalCash - totalCardDebt;
 
   const byId = Object.fromEntries(accounts.map((a) => [a.id, a]));
   const [order, setOrder] = useOrder(accounts.map((a) => a.id));
@@ -54,15 +51,12 @@ export default function AccountsEditor({
         </button>
       </div>
 
-      {/* Cash position summary */}
-      <div className="card mb-2.5 grid grid-cols-3 gap-2 p-3.5 text-center">
-        <Stat label="Cash" value={formatCurrency(totalCash, currency)} />
-        <Stat label="Card debt" value={formatCurrency(totalCardDebt, currency)} tone="over" />
-        <Stat
-          label="Free money"
-          value={formatCurrency(free, currency)}
-          tone={free >= 0 ? "sage" : "over"}
-        />
+      {/* Total cash */}
+      <div className="card mb-2.5 p-3.5 text-center">
+        <p className="text-2xl font-semibold tabular-nums text-ink">
+          {formatCurrency(totalCash, currency)}
+        </p>
+        <p className="text-[11px] uppercase tracking-wide text-ink-soft">Total in accounts</p>
       </div>
 
       {accounts.length === 0 ? (
@@ -81,25 +75,6 @@ export default function AccountsEditor({
         </SortableList>
       )}
     </section>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "sage" | "over";
-}) {
-  const color =
-    tone === "sage" ? "text-sage-600" : tone === "over" ? "text-terracotta-700" : "text-ink";
-  return (
-    <div>
-      <p className={`text-base font-semibold tabular-nums ${color}`}>{value}</p>
-      <p className="text-[11px] uppercase tracking-wide text-ink-soft">{label}</p>
-    </div>
   );
 }
 
