@@ -63,9 +63,19 @@ docker compose down -v            # stop AND delete the database volume (wipes d
 
 ### Updating to a new version
 
+Easiest — use the deploy script (always syncs to the latest `main`, rebuilds,
+and recreates containers, so it can't get stuck on an old commit/branch):
+
 ```bash
-git pull
-docker compose up -d --build
+./deploy.sh
+```
+
+Or do it by hand:
+
+```bash
+git checkout main
+git pull origin main
+docker compose up -d --build --force-recreate
 ```
 
 Migrations run again on start; existing data is preserved (the seed step skips
