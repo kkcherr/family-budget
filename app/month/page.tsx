@@ -34,7 +34,7 @@ export default async function MonthPage({
   return (
     <>
       <TopBar />
-      <main className="mx-auto max-w-2xl px-5 pb-20 pt-6">
+      <main className="mx-auto max-w-6xl px-5 pb-20 pt-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-ink">
@@ -80,7 +80,7 @@ export default async function MonthPage({
                   >
                     {SECTION_LABELS[section]}
                   </h3>
-                  <div className="space-y-2.5">
+                  <div className="grid gap-2.5 lg:grid-cols-2">
                     {items.map((c) => (
                       <CategoryRow
                         key={c.id}

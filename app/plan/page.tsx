@@ -13,7 +13,7 @@ export default async function PlanPage() {
   return (
     <>
       <TopBar />
-      <main className="mx-auto max-w-2xl px-5 pb-20 pt-6">
+      <main className="mx-auto max-w-6xl px-5 pb-20 pt-6">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-ink">Your plan</h1>
           <p className="text-sm text-ink-soft">
