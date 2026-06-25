@@ -235,7 +235,7 @@ export default function MonthEditor({
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-          <Pill label="Spent up to today" value={formatCurrency(tally.spent, currency)} sub={formatPercent(percentOfIncome(tally.spent, income))} />
+          <Pill label="Spent up to today" value={formatCurrency(tally.spent, currency)} sub={`${formatPercent(percentOfIncome(tally.spent, income))} · fixed + variable`} tone="mist" />
           <Pill label="Left this month" value={formatCurrency(tally.leftToSave, currency)} sub={`${formatPercent(percentOfIncome(tally.leftToSave, income))} of income`} tone="sage" />
         </div>
       </section>
@@ -291,10 +291,11 @@ function Pill({
   label: string;
   value: string;
   sub?: string;
-  tone?: "sage";
+  tone?: "sage" | "mist";
 }) {
+  const bg = tone === "sage" ? "bg-sage-100" : tone === "mist" ? "bg-mist-200" : "bg-lavender-100";
   return (
-    <div className={`rounded-xl px-2 py-1.5 ${tone === "sage" ? "bg-sage-100" : "bg-lavender-100"}`}>
+    <div className={`rounded-xl px-2 py-1.5 ${bg}`}>
       <p className="text-lg font-semibold tabular-nums text-ink">{value}</p>
       <p className="text-[11px] uppercase tracking-wide text-ink-soft">{label}</p>
       {sub && <p className="text-[10px] text-ink-faint">{sub}</p>}
