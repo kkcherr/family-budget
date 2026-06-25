@@ -1,0 +1,54 @@
+name: Deploy
+
+# Deploys to your server over SSH whenever main updates (e.g. a PR is merged),
+# and can also be run by hand from the Actions tab.
+#
+# This job stays SKIPPED until you opt in by setting the repository variable
+# DEPLOY_ENABLED = true and adding the secrets below — so it never produces a
+# failing build before it's configured.
+#
+# Required (Settings → Secrets and variables → Actions):
+#   Variables: DEPLOY_ENABLED = true
+#   Secrets:   SSH_HOST      your server's hostname or IP
+#              SSH_USER      the SSH user (e.g. root, or a docker-group user)
+#              SSH_KEY       the PRIVATE key whose public half is in the
+#                            server's ~/.ssh/authorized_keys
+#              DEPLOY_PATH   path to the repo on the server (e.g. /root/family-budget)
+#   Optional:  SSH_PORT      defaults to 22
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          script_stop: true
+          command_timeout: "20m"
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+            echo "▸ Syncing to origin/main…"
+            git fetch origin --prune
+            git checkout main 2>/dev/null || git checkout -b main origin/main
+            git reset --hard origin/main
+            echo "▸ Now on: $(git log --oneline -1)"
+            echo "▸ Rebuilding containers…"
+            docker compose up -d --build --force-recreate
+            docker image prune -f || true
+            docker compose ps

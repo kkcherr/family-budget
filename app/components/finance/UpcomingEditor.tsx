@@ -9,6 +9,7 @@ import {
   formatDateStr,
   relativeDays,
 } from "@/lib/money";
+import { SortableList, SortableRow, useOrder } from "./Sortable";
 
 export default function UpcomingEditor({
   payments,
@@ -18,6 +19,18 @@ export default function UpcomingEditor({
   currency: string;
 }) {
   const router = useRouter();
+
+  const byId = Object.fromEntries(payments.map((p) => [p.id, p]));
+  const [order, setOrder] = useOrder(payments.map((p) => p.id));
+  async function onReorder(next: number[]) {
+    setOrder(next);
+    await fetch("/api/upcoming", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: next }),
+    });
+    router.refresh();
+  }
 
   async function add() {
     await fetch("/api/upcoming", {
@@ -41,16 +54,21 @@ export default function UpcomingEditor({
           + Add
         </button>
       </div>
-      <div className="space-y-2.5">
-        {payments.length === 0 && (
-          <p className="card px-4 py-5 text-center text-sm text-ink-faint">
-            Nothing planned yet.
-          </p>
-        )}
-        {payments.map((p) => (
-          <UpcomingRow key={p.id} payment={p} currency={currency} />
-        ))}
-      </div>
+      {payments.length === 0 ? (
+        <p className="card px-4 py-5 text-center text-sm text-ink-faint">
+          Nothing planned yet.
+        </p>
+      ) : (
+        <SortableList ids={order} onReorder={onReorder}>
+          {order.map((id) =>
+            byId[id] ? (
+              <SortableRow key={id} id={id}>
+                <UpcomingRow payment={byId[id]} currency={currency} />
+              </SortableRow>
+            ) : null
+          )}
+        </SortableList>
+      )}
     </section>
   );
 }

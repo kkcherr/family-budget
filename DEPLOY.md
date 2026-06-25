@@ -81,6 +81,38 @@ docker compose up -d --build --force-recreate
 Migrations run again on start; existing data is preserved (the seed step skips
 when categories already exist).
 
+### Automatic deploy on merge (optional)
+
+`.github/workflows/deploy.yml` can deploy for you over SSH every time `main`
+updates — so you never touch the server. It stays **disabled** until you set
+the variable below, so it won't fail builds before it's configured.
+
+**One-time setup:**
+
+1. **Make a deploy key** (on your machine; no passphrase):
+   ```bash
+   ssh-keygen -t ed25519 -f familybudget_deploy -N "" -C "familybudget-deploy"
+   ```
+2. **Authorise it on the server** (so GitHub can log in):
+   ```bash
+   ssh-copy-id -i familybudget_deploy.pub <user>@<server>
+   # or append familybudget_deploy.pub to ~/.ssh/authorized_keys on the server
+   ```
+3. **Add GitHub repo settings** → *Settings → Secrets and variables → Actions*:
+   - **Variable:** `DEPLOY_ENABLED` = `true`
+   - **Secrets:**
+     - `SSH_HOST` — server hostname/IP
+     - `SSH_USER` — the SSH user (e.g. `root`)
+     - `SSH_KEY` — contents of the **private** key file `familybudget_deploy`
+     - `DEPLOY_PATH` — repo path on the server (e.g. `/root/family-budget`)
+     - `SSH_PORT` — only if not 22
+4. Make sure the server accepts inbound SSH (port 22) and that `SSH_USER` can
+   run `docker compose`.
+
+After that, merging any PR to `main` auto-deploys. You can also trigger it
+manually from the repo's **Actions → Deploy → Run workflow**. Revoke access
+anytime by removing the key from the server or unsetting `DEPLOY_ENABLED`.
+
 ### Backups
 
 Your data lives in the `pgdata` Docker volume. A simple dump:

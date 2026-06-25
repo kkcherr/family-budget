@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FinanceSummary, daysUntil } from "@/lib/finance-types";
+import { FinanceSummary, amountDue, daysUntil } from "@/lib/finance-types";
 import {
   formatCurrency,
   formatDateStr,
@@ -37,7 +37,7 @@ export default function DashboardSurfaces({
         {next && next.due ? (
           <>
             <p className="text-lg font-semibold tabular-nums text-ink">
-              {formatCurrency(next.card.balance, currency)}
+              {formatCurrency(amountDue(next.card), currency)}
             </p>
             <p className="text-xs text-ink-soft">
               {next.card.name} · by {formatDateStr(next.due)}

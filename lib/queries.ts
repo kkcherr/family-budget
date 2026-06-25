@@ -6,9 +6,8 @@ import {
   MonthSummary,
   Plan,
   Section,
-  monthlyEquivalent,
 } from "./types";
-import { isValidMonth, percentOfIncome } from "./money";
+import { currentMonth, isValidMonth, percentOfIncome } from "./money";
 
 // postgres.js returns NUMERIC columns as strings; coerce to numbers.
 const num = (v: unknown): number => (v == null ? 0 : Number(v));
@@ -171,6 +170,38 @@ export async function upsertActual(
   `;
 }
 
+/**
+ * Set a category's carried value, effective from `month`. Because resolution
+ * picks the latest effective_month <= the viewed month, this applies from
+ * `month` forward while earlier months keep their own values.
+ */
+export async function setCategoryValue(
+  month: string,
+  categoryId: number,
+  amount: number
+): Promise<void> {
+  if (!isValidMonth(month)) throw new Error("Invalid month");
+  await sql`
+    INSERT INTO category_values (category_id, effective_month, amount, updated_at)
+    VALUES (${categoryId}, ${month}, ${amount}, now())
+    ON CONFLICT (category_id, effective_month) DO UPDATE
+      SET amount = EXCLUDED.amount, updated_at = now()
+  `;
+}
+
+/** Carried value per category resolved for `month` (latest effective_month <= month). */
+async function getResolvedValues(month: string): Promise<Map<number, number>> {
+  const rows = await sql<{ category_id: number; amount: string }[]>`
+    SELECT DISTINCT ON (category_id) category_id, amount
+    FROM category_values
+    WHERE effective_month <= ${month}
+    ORDER BY category_id, effective_month DESC
+  `;
+  const map = new Map<number, number>();
+  for (const r of rows) map.set(Number(r.category_id), num(r.amount));
+  return map;
+}
+
 /** All actuals for a month, keyed by category id. */
 async function getActualsForMonth(
   month: string
@@ -188,26 +219,27 @@ async function getActualsForMonth(
 
 /** Build the full month summary, including derived numbers. */
 export async function getMonthSummary(month: string): Promise<MonthSummary> {
-  const [plan, categories, actuals] = await Promise.all([
+  const [plan, categories, actuals, planned] = await Promise.all([
     getPlan(),
     getCategories(false),
     getActualsForMonth(month),
+    getResolvedValues(month),
   ]);
 
-  const withActuals: CategoryWithActual[] = categories.map((c) => ({
-    ...c,
-    actual: actuals.get(c.id) ?? 0,
-  }));
+  // Fixed/Savings use the carried value as the amount; Variable compares its
+  // carried budget against logged spend.
+  const rows: CategoryWithActual[] = categories.map((c) => {
+    const p = planned.get(c.id) ?? 0;
+    const actual = c.section === "variable" ? actuals.get(c.id) ?? 0 : p;
+    return { ...c, planned: p, actual };
+  });
 
-  const spending = withActuals.filter((c) => c.section !== "savings");
-  const savings = withActuals.filter((c) => c.section === "savings");
+  const spending = rows.filter((c) => c.section !== "savings");
+  const savings = rows.filter((c) => c.section === "savings");
 
   const totalSpent = spending.reduce((s, c) => s + c.actual, 0);
   const totalSaved = savings.reduce((s, c) => s + c.actual, 0);
-  const totalPlannedSpending = spending.reduce(
-    (s, c) => s + monthlyEquivalent(c.target_amount, c.frequency),
-    0
-  );
+  const totalPlannedSpending = spending.reduce((s, c) => s + c.planned, 0);
 
   const income = plan.monthly_income;
 
@@ -215,7 +247,7 @@ export async function getMonthSummary(month: string): Promise<MonthSummary> {
     month,
     income,
     currency: plan.currency,
-    categories: withActuals,
+    categories: rows,
     totalSpent,
     totalSaved,
     totalPlannedSpending,
@@ -246,34 +278,60 @@ export interface YearSummary {
 
 /** Per-month spent vs saved totals for a calendar year (for the YTD graph). */
 export async function getYearSummary(year: number): Promise<YearSummary> {
-  const plan = await getPlan();
-  const rows = await sql<{ month: string; spent: string; saved: string }[]>`
-    SELECT m.month,
-      SUM(CASE WHEN c.section <> 'savings' THEN a.amount ELSE 0 END) AS spent,
-      SUM(CASE WHEN c.section =  'savings' THEN a.amount ELSE 0 END) AS saved
-    FROM months m
-    JOIN actuals a ON a.month_id = m.id
-    JOIN categories c ON c.id = a.category_id
-    WHERE m.month LIKE ${year + "-%"}
-    GROUP BY m.month
-    ORDER BY m.month
-  `;
+  const [plan, categories, valueRows, actualRows] = await Promise.all([
+    getPlan(),
+    getCategories(false),
+    sql<{ category_id: number; effective_month: string; amount: string }[]>`
+      SELECT category_id, effective_month, amount
+      FROM category_values ORDER BY effective_month ASC`,
+    sql<{ category_id: number; month: string; amount: string }[]>`
+      SELECT a.category_id, m.month, a.amount
+      FROM actuals a JOIN months m ON m.id = a.month_id
+      WHERE m.month LIKE ${year + "-%"}`,
+  ]);
 
-  const byMonth = new Map<string, { spent: number; saved: number }>();
-  for (const r of rows) {
-    byMonth.set(r.month, { spent: num(r.spent), saved: num(r.saved) });
+  // Carried values per category (ascending), for resolving each month.
+  const valuesByCat = new Map<number, { m: string; a: number }[]>();
+  for (const r of valueRows) {
+    const arr = valuesByCat.get(r.category_id) ?? [];
+    arr.push({ m: r.effective_month, a: num(r.amount) });
+    valuesByCat.set(r.category_id, arr);
   }
+  const resolve = (catId: number, month: string): number => {
+    const arr = valuesByCat.get(catId);
+    if (!arr) return 0;
+    let val = 0;
+    for (const e of arr) {
+      if (e.m <= month) val = e.a;
+      else break;
+    }
+    return val;
+  };
+  const actualByKey = new Map<string, number>();
+  for (const r of actualRows)
+    actualByKey.set(`${r.category_id}|${r.month}`, num(r.amount));
 
+  const today = currentMonth();
   const points: YearMonthPoint[] = [];
   for (let i = 0; i < 12; i++) {
     const month = `${year}-${String(i + 1).padStart(2, "0")}`;
-    const v = byMonth.get(month) ?? { spent: 0, saved: 0 };
-    points.push({ month, monthIndex: i, spent: v.spent, saved: v.saved });
+    let spent = 0;
+    let saved = 0;
+    // Don't project past the current month.
+    if (month <= today) {
+      for (const c of categories) {
+        if (c.section === "savings") saved += resolve(c.id, month);
+        else if (c.section === "variable")
+          spent += actualByKey.get(`${c.id}|${month}`) ?? 0;
+        else spent += resolve(c.id, month); // fixed
+      }
+    }
+    points.push({ month, monthIndex: i, spent, saved });
   }
 
   const totalSpent = points.reduce((s, p) => s + p.spent, 0);
   const totalSaved = points.reduce((s, p) => s + p.saved, 0);
-  const monthsWithData = byMonth.size;
+  const monthsWithData = points.filter((p) => p.spent > 0 || p.saved > 0).length;
 
   return {
     year,
@@ -290,22 +348,21 @@ export async function getYearSummary(year: number): Promise<YearSummary> {
 /** Years that have any tracked data (for the year switcher). */
 export async function getTrackedYears(includeYear: number): Promise<number[]> {
   const rows = await sql<{ y: string }[]>`
-    SELECT DISTINCT LEFT(m.month, 4) AS y
-    FROM months m JOIN actuals a ON a.month_id = m.id
-    ORDER BY y DESC
+    SELECT LEFT(m.month, 4) AS y FROM months m JOIN actuals a ON a.month_id = m.id
+    UNION
+    SELECT LEFT(effective_month, 4) AS y FROM category_values
   `;
   const set = new Set(rows.map((r) => Number(r.y)));
   set.add(includeYear);
   return Array.from(set).sort((a, b) => b - a);
 }
 
-/** Distinct months that have any actuals, newest first, plus the given month. */
+/** Distinct months that have any entries, newest first, plus the given month. */
 export async function getTrackedMonths(include: string): Promise<string[]> {
   const rows = await sql<{ month: string }[]>`
-    SELECT DISTINCT m.month
-    FROM months m
-    JOIN actuals a ON a.month_id = m.id
-    ORDER BY m.month DESC
+    SELECT m.month FROM months m JOIN actuals a ON a.month_id = m.id
+    UNION
+    SELECT effective_month AS month FROM category_values
   `;
   const set = new Set(rows.map((r) => r.month));
   if (isValidMonth(include)) set.add(include);

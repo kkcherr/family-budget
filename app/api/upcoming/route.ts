@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import {
   createUpcomingPayment,
   getUpcomingPayments,
+  reorderUpcomingPayments,
 } from "@/lib/finance";
+import { parseIds } from "@/lib/reorder";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,4 +22,11 @@ export async function POST(req: Request) {
   }
   const name = String(body.name ?? "").trim() || "New payment";
   return NextResponse.json(await createUpcomingPayment(name), { status: 201 });
+}
+
+export async function PATCH(req: Request) {
+  const ids = await parseIds(req);
+  if (!ids) return NextResponse.json({ error: "ids array required" }, { status: 400 });
+  await reorderUpcomingPayments(ids);
+  return NextResponse.json({ ok: true });
 }

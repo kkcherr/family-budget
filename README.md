@@ -136,11 +136,13 @@ npm run start
 
 ```
 app/
-  page.tsx            Dashboard (month switcher, headline, donut, categories)
-  plan/page.tsx       Plan editor (income + categories)
+  page.tsx            Dashboard (overview: header, headline, donut, reminders)
+  month/page.tsx      Month board — income + items + carry-forward + actuals
+  finances/page.tsx   Cards & cash (credit cards, accounts, upcoming)
+  year/page.tsx       Year-to-date charts
   login/page.tsx      Shared-password login
-  api/                login · logout · plan · categories · categories/[id] · actuals
-  components/         Donut, ProgressBar, CategoryRow, HeadlineSummary, ...
+  api/                login · logout · plan · categories · values · actuals · cards · accounts · upcoming
+  components/         Donut, ProgressBar, MonthEditor, HeadlineSummary, ...
 lib/
   db.ts               postgres.js client (SSL auto for remote hosts)
   auth.ts             Web Crypto HMAC session token + password check

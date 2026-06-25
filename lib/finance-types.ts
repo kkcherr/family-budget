@@ -1,16 +1,17 @@
 // Pure types + date helpers for the finance features. No DB import here, so
 // client components can use these safely.
 
-export type DueKind = "monthly_day" | "fixed_date" | "none";
+export type DueKind = "monthly_day" | "fixed_date" | "none" | "statement";
 
 export interface CreditCard {
   id: number;
   name: string;
-  balance: number; // current amount owed
+  balance: number; // current amount owed (accruing period for statement cards)
+  statement_balance: number; // closed statement amount to pay (statement cards)
   due_kind: DueKind;
-  due_day: number | null; // day-of-month for monthly_day
+  due_day: number | null; // day-of-month for monthly_day / statement payment day
   due_date: string | null; // 'YYYY-MM-DD' for fixed_date
-  statement_day: number | null; // informational
+  statement_day: number | null; // statement close day (statement cards)
   note: string | null;
   sort_order: number;
   archived: boolean;
@@ -93,7 +94,29 @@ export function daysUntil(
 /** The next "pay by" date for a card, as 'YYYY-MM-DD' or null. */
 export function nextDue(card: CreditCard, from = new Date()): string | null {
   if (card.due_kind === "fixed_date") return card.due_date;
-  if (card.due_kind === "monthly_day" && card.due_day)
+  if ((card.due_kind === "monthly_day" || card.due_kind === "statement") && card.due_day)
     return nextMonthlyDay(card.due_day, from);
   return null;
+}
+
+/** The amount due at the next payment (statement cards owe the closed statement). */
+export function amountDue(card: CreditCard): number {
+  return card.due_kind === "statement" ? card.statement_balance : card.balance;
+}
+
+/** Total currently owed on a card (accruing + any closed statement to pay). */
+export function totalOwed(card: CreditCard): number {
+  return card.balance + (card.due_kind === "statement" ? card.statement_balance : 0);
+}
+
+/** Most recent statement close on/before `from`, as 'YYYY-MM-DD'. */
+export function lastStatementClose(day: number, from = new Date()): string {
+  const y = from.getFullYear();
+  const m = from.getMonth();
+  const dim = (yy: number, mm: number) => new Date(yy, mm + 1, 0).getDate();
+  const thisClose = Math.min(day, dim(y, m));
+  if (from.getDate() >= thisClose) return todayStr(new Date(y, m, thisClose));
+  const py = m === 0 ? y - 1 : y;
+  const pm = m === 0 ? 11 : m - 1;
+  return todayStr(new Date(py, pm, Math.min(day, dim(py, pm))));
 }
