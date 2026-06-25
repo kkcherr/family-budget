@@ -71,11 +71,12 @@ export default function MonthEditor({
   );
 
   const tally = useMemo(() => {
-    const all = Object.values(byId);
-    const spent = all.filter((c) => c.section !== "savings").reduce((s, c) => s + c.actual, 0);
-    const saved = all.filter((c) => c.section === "savings").reduce((s, c) => s + c.actual, 0);
-    return { spent, saved };
-  }, [byId]);
+    const spent = Object.values(byId)
+      .filter((c) => c.section !== "savings")
+      .reduce((s, c) => s + c.actual, 0);
+    const leftToSave = income - spent; // income − all expenses
+    return { spent, leftToSave };
+  }, [byId, income]);
 
   // --- Income --------------------------------------------------------------
   async function saveIncome() {
@@ -231,10 +232,9 @@ export default function MonthEditor({
             {savingIncome ? "Saving…" : "Save"}
           </button>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div className="mt-3 grid grid-cols-2 gap-2 text-center">
           <Pill label="Spent" value={formatCurrency(tally.spent, currency)} sub={formatPercent(percentOfIncome(tally.spent, income))} />
-          <Pill label="Saved" value={formatCurrency(tally.saved, currency)} sub={formatPercent(percentOfIncome(tally.saved, income))} tone="sage" />
-          <Pill label="Leftover" value={formatCurrency(Math.max(income - tally.spent - tally.saved, 0), currency)} />
+          <Pill label="Left to save" value={formatCurrency(tally.leftToSave, currency)} sub={`${formatPercent(percentOfIncome(tally.leftToSave, income))} of income`} tone="sage" />
         </div>
       </section>
 
@@ -260,12 +260,6 @@ export default function MonthEditor({
                 <Column key={col} id={containerKey("variable", col)} layout={layout} byId={byId} {...cardProps} />
               ))}
             </div>
-          </SectionBlock>
-        </div>
-
-        <div className="mt-4">
-          <SectionBlock section="savings" onAdd={() => addCategory("savings")}>
-            <Column id={containerKey("savings", 0)} layout={layout} byId={byId} {...cardProps} />
           </SectionBlock>
         </div>
 

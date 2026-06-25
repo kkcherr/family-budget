@@ -4,6 +4,7 @@ import {
   CreditCard,
   DueKind,
   FinanceSummary,
+  SavingsPot,
   UpcomingPayment,
   nextDue,
   totalOwed,
@@ -14,6 +15,7 @@ export type {
   CreditCard,
   DueKind,
   FinanceSummary,
+  SavingsPot,
   UpcomingPayment,
 } from "./finance-types";
 
@@ -105,6 +107,66 @@ async function reorder(table: "credit_cards" | "accounts" | "upcoming_payments",
 export const reorderCreditCards = (ids: number[]) => reorder("credit_cards", ids);
 export const reorderAccounts = (ids: number[]) => reorder("accounts", ids);
 export const reorderUpcomingPayments = (ids: number[]) => reorder("upcoming_payments", ids);
+
+// --- Savings pots ----------------------------------------------------------
+
+function mapPot(r: Record<string, unknown>): SavingsPot {
+  return {
+    id: Number(r.id),
+    name: String(r.name),
+    balance: num(r.balance),
+    sort_order: Number(r.sort_order),
+    archived: Boolean(r.archived),
+  };
+}
+
+export async function getSavingsPots(): Promise<SavingsPot[]> {
+  const rows = await sql<Record<string, unknown>[]>`
+    SELECT id, name, balance, sort_order, archived
+    FROM savings_pots WHERE archived = FALSE
+    ORDER BY sort_order ASC, id ASC
+  `;
+  return rows.map(mapPot);
+}
+
+export async function createSavingsPot(name: string): Promise<SavingsPot> {
+  const next = await sql<{ n: number }[]>`
+    SELECT COALESCE(MAX(sort_order), 0) + 1 AS n FROM savings_pots
+  `;
+  const rows = await sql<Record<string, unknown>[]>`
+    INSERT INTO savings_pots (name, sort_order) VALUES (${name}, ${next[0].n})
+    RETURNING id, name, balance, sort_order, archived
+  `;
+  return mapPot(rows[0]);
+}
+
+export async function updateSavingsPot(
+  id: number,
+  p: { name?: string; balance?: number; archived?: boolean }
+): Promise<SavingsPot | null> {
+  const rows = await sql<Record<string, unknown>[]>`
+    UPDATE savings_pots SET
+      name = ${p.name ?? sql`name`},
+      balance = ${p.balance ?? sql`balance`},
+      archived = ${p.archived ?? sql`archived`}
+    WHERE id = ${id}
+    RETURNING id, name, balance, sort_order, archived
+  `;
+  return rows[0] ? mapPot(rows[0]) : null;
+}
+
+export async function archiveSavingsPot(id: number): Promise<void> {
+  await sql`UPDATE savings_pots SET archived = TRUE WHERE id = ${id}`;
+}
+
+async function reorderPots(ids: number[]) {
+  await sql.begin(async (tx) => {
+    for (let i = 0; i < ids.length; i++) {
+      await tx`UPDATE savings_pots SET sort_order = ${i + 1} WHERE id = ${ids[i]}`;
+    }
+  });
+}
+export const reorderSavingsPots = (ids: number[]) => reorderPots(ids);
 
 // --- Accounts --------------------------------------------------------------
 
@@ -229,14 +291,16 @@ export async function archiveUpcomingPayment(id: number): Promise<void> {
 // --- Combined summary (for the dashboard) ----------------------------------
 
 export async function getFinanceSummary(): Promise<FinanceSummary> {
-  const [cards, accounts, upcoming] = await Promise.all([
+  const [cards, accounts, upcoming, savings] = await Promise.all([
     getCreditCards(),
     getAccounts(),
     getUpcomingPayments(),
+    getSavingsPots(),
   ]);
 
   const totalCardDebt = cards.reduce((s, c) => s + totalOwed(c), 0);
   const totalCash = accounts.reduce((s, a) => s + a.balance, 0);
+  const totalSavings = savings.reduce((s, p) => s + p.balance, 0);
 
   // Soonest upcoming card payment by due date.
   let nextCardPayment: FinanceSummary["nextCardPayment"] = null;
@@ -261,8 +325,10 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     cards,
     accounts,
     upcoming,
+    savings,
     totalCardDebt,
     totalCash,
+    totalSavings,
     freeMoney: totalCash - totalCardDebt,
     nextCardPayment,
     totalStillToSetAside,

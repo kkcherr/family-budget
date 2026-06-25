@@ -22,10 +22,7 @@ const VARIABLE = [
   ["Clothes / Shopping", "Entertainment", "Gifts", "Miscellaneous"],
 ];
 
-const SAVINGS = [
-  // single column
-  ["deposit Vanya", "deposit Katya", "ISA Vanya", "ISA Katya"],
-];
+const SAVINGS_POTS = ["deposit Vanya", "deposit Katya", "ISA Vanya", "ISA Katya"];
 
 function rows() {
   const out = [];
@@ -38,7 +35,6 @@ function rows() {
   };
   push("fixed", FIXED);
   push("variable", VARIABLE);
-  push("savings", SAVINGS);
   return out;
 }
 
@@ -81,9 +77,17 @@ async function main() {
           VALUES (${r.name}, ${r.section}, ${r.col}, 0, 'monthly', ${r.sort_order})
         `;
       }
+      // Savings pots live on the Cash & Savings page (running balances).
+      let order = 1;
+      for (const name of SAVINGS_POTS) {
+        await tx`
+          INSERT INTO savings_pots (name, sort_order) VALUES (${name}, ${order})
+        `;
+        order++;
+      }
     });
 
-    console.log(`Seeded ${items.length} plan items (fixed, variable, savings).`);
+    console.log(`Seeded ${items.length} plan items + ${SAVINGS_POTS.length} savings pots.`);
   } finally {
     await sql.end();
   }
