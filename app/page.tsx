@@ -71,8 +71,8 @@ export default async function DashboardPage({
             <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
               Add your income and expense items to start your first check-in.
             </p>
-            <Link href="/plan" className="btn-primary mt-5">
-              Set up the plan
+            <Link href="/month" className="btn-primary mt-5">
+              Set up this month
             </Link>
           </div>
         ) : (

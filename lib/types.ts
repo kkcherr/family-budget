@@ -67,8 +67,14 @@ export interface Category {
   archived: boolean;
 }
 
-/** A category joined with its actual spend for the selected month. */
+/**
+ * A category resolved for a specific month.
+ * - `planned`: the carried-forward value (Fixed/Savings amount; Variable budget).
+ * - `actual`:  the amount that counts as spent/saved this month. For Fixed and
+ *   Savings this equals `planned`; for Variable it's the logged spend.
+ */
 export interface CategoryWithActual extends Category {
+  planned: number;
   actual: number;
 }
 
@@ -78,10 +84,10 @@ export interface MonthSummary {
   income: number;
   currency: string;
   categories: CategoryWithActual[];
-  // Derived headline figures (month-to-date actuals)
-  totalSpent: number; // sum of actuals for fixed + variable
-  totalSaved: number; // sum of actuals for savings
-  totalPlannedSpending: number; // sum of monthly-equivalent targets, fixed + variable
+  // Derived headline figures (month-to-date)
+  totalSpent: number; // fixed amounts + variable logged spend
+  totalSaved: number; // savings amounts
+  totalPlannedSpending: number; // fixed amounts + variable budgets
   percentOfIncomeSpent: number; // totalSpent / income
   savingsRate: number; // totalSaved / income
   overUnder: number; // totalPlannedSpending - totalSpent (positive = under budget)
