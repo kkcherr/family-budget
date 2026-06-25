@@ -234,7 +234,7 @@ export default function MonthEditor({
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-center">
           <Pill label="Spent" value={formatCurrency(tally.spent, currency)} sub={formatPercent(percentOfIncome(tally.spent, income))} />
-          <Pill label="Left to save" value={formatCurrency(tally.leftToSave, currency)} sub={`${formatPercent(percentOfIncome(tally.leftToSave, income))} of income`} tone="sage" />
+          <Pill label="Can be saved" value={formatCurrency(tally.leftToSave, currency)} sub={`${formatPercent(percentOfIncome(tally.leftToSave, income))} of income`} tone="sage" />
         </div>
       </section>
 

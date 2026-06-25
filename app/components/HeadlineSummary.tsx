@@ -64,7 +64,7 @@ export default function HeadlineSummary({ summary }: { summary: MonthSummary }) 
         tone={percentOfIncomeSpent > 1 ? "warn" : "neutral"}
       />
       <Stat
-        label="Left to save"
+        label="Can be saved"
         value={formatCurrency(totalSaved, currency)}
         sub="Income − expenses"
         tone={totalSaved >= 0 ? "positive" : "warn"}
