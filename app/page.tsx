@@ -6,7 +6,7 @@ import TopBar from "./components/TopBar";
 import MonthSwitcher from "./components/MonthSwitcher";
 import DashboardHeader from "./components/DashboardHeader";
 import HeadlineSummary from "./components/HeadlineSummary";
-import DashboardSurfaces from "./components/DashboardSurfaces";
+import UpcomingEditor from "./components/finance/UpcomingEditor";
 import Donut, { DonutSlice } from "./components/Donut";
 import { formatCurrency, formatPercent } from "@/lib/money";
 import Link from "next/link";
@@ -128,7 +128,7 @@ export default async function DashboardPage({
               )}
             </section>
 
-            <DashboardSurfaces finance={finance} currency={summary.currency} />
+            <UpcomingEditor payments={finance.upcoming} currency={summary.currency} />
           </div>
         )}
       </main>

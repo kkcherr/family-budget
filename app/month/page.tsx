@@ -1,8 +1,11 @@
 import { getMonthSummary, getPlan, getTrackedMonths } from "@/lib/queries";
+import { getFinanceSummary } from "@/lib/finance";
 import { currentMonth, isValidMonth, monthLabel } from "@/lib/money";
 import TopBar from "../components/TopBar";
 import MonthSwitcher from "../components/MonthSwitcher";
 import MonthEditor from "../components/MonthEditor";
+import CreditCardsEditor from "../components/finance/CreditCardsEditor";
+import AccountsEditor from "../components/finance/AccountsEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +18,13 @@ export default async function MonthPage({
   const month =
     params.month && isValidMonth(params.month) ? params.month : currentMonth();
 
-  const [plan, summary, months] = await Promise.all([
+  const [plan, summary, months, finance] = await Promise.all([
     getPlan(),
     getMonthSummary(month),
     getTrackedMonths(month),
+    getFinanceSummary(),
   ]);
+  const currency = plan.currency;
 
   return (
     <>
@@ -36,6 +41,15 @@ export default async function MonthPage({
         </div>
 
         <MonthEditor initialPlan={plan} initialCategories={summary.categories} month={month} />
+
+        <div className="mt-8 space-y-8">
+          <CreditCardsEditor cards={finance.cards} currency={currency} />
+          <AccountsEditor
+            accounts={finance.accounts}
+            currency={currency}
+            totalCardDebt={finance.totalCardDebt}
+          />
+        </div>
       </main>
     </>
   );

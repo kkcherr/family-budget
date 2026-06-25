@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { APP_VERSION } from "@/lib/version";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +27,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen font-sans antialiased">{children}</body>
+      <body className="flex min-h-screen flex-col font-sans antialiased">
+        <div className="flex-1">{children}</div>
+        <footer className="py-4 text-center text-xs text-ink-faint">
+          {`Family Budget · v${APP_VERSION}`}
+        </footer>
+      </body>
     </html>
   );
 }
